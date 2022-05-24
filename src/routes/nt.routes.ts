@@ -3,6 +3,11 @@ import ntController from '../controllers/nt.controller';
 const router = Router();
 
 /*
+/nt/search
+*/
+router.route('/search').get(ntController().search);
+
+/*
 /nt/new
 */
 router.route('/new').get(ntController().getNewManga);

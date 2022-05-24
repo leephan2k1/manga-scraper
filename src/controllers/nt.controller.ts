@@ -56,7 +56,40 @@ function ntController() {
             hasNextPage: Number(page) < Number(totalPages) ? true : false,
         });
     };
-    return { getCompletedManga, getNewManga };
+
+    const search = async (req: Request, res: Response, next: NextFunction) => {
+        const { q, limit } = req.query;
+        let { page } = req.query;
+
+        const { mangaData, totalPages } = await Nt.searchQuery(String(q));
+
+        if (!mangaData.length) {
+            return res.status(401).json({ success: false });
+        }
+
+        let _mangaData = [...mangaData];
+        let hasNextPage = false;
+        if (limit) {
+            if (!page) page = '1';
+
+            _mangaData = _mangaData.slice(
+                (Number(page) - 1) * Number(limit),
+                Number(limit) * Number(page),
+            );
+            if (mangaData[Number(limit) * Number(page)]) {
+                hasNextPage = true;
+            }
+        }
+
+        res.status(200).json({
+            success: true,
+            data: _mangaData,
+            hasPrevPage: Number(page) > 1 ? true : false,
+            hasNextPage,
+        });
+    };
+
+    return { getCompletedManga, getNewManga, search };
 }
 
 export default ntController;
