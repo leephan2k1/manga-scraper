@@ -1,3 +1,5 @@
 {
-    "cSpell.words": ["Tmzz"]
+    "cSpell.words": ["Tmzz"],
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
 }
