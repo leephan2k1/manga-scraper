@@ -1,10 +1,15 @@
 import Router from 'express-promise-router';
-import getRecentlyTmzz from '../controllers/tmzzControllers/recently.controller';
+import tmzzController from '../controllers/tmzz.controller';
 const router = Router();
 
 /*
-/tmzz/recently
+/tmzz/new
 */
-router.route('/recently').get(getRecentlyTmzz);
+router.route('/new').get(tmzzController().getNewManga);
+
+/*
+/tmzz/new-update
+*/
+router.route('/new-update').get(tmzzController().getNewMangaUpdated);
 
 export default router;
