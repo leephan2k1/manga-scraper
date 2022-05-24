@@ -1,6 +1,7 @@
 import Scraper from '../libs/Scraper';
 import { JSDOM } from 'jsdom';
 import { AxiosRequestConfig } from 'axios';
+import { NtDataList } from '../types/nt';
 
 export default class NtModel extends Scraper {
     private static instance: NtModel;
@@ -25,40 +26,7 @@ export default class NtModel extends Scraper {
         return this.instance;
     }
 
-    public async getNewManga() {
-        const { data } = await this.client.get(this.baseUrl);
-        const { window } = new JSDOM(data);
-        const { document } = window;
-
-        const mangaList = document.querySelectorAll('.manga-list');
-        const newMangaDOM = mangaList[1].querySelectorAll('li');
-
-        const newMangaData = [...newMangaDOM].map((manga) => {
-            const newChapter = manga.querySelector('strong')?.innerHTML;
-            const thumbnail = manga.querySelector('img')?.getAttribute('src');
-            const view = manga.querySelector('.view-count span')?.innerHTML;
-            const name = String(manga.querySelector('h4')?.innerHTML).replace(
-                /(\r\n|\n|\r)/gm,
-                '',
-            );
-            const updatedAt =
-                manga.querySelector('.manga-meta span')?.innerHTML;
-            const path = String(manga.querySelector('a')?.getAttribute('href'));
-            const slug = path.substring(path.lastIndexOf('/') + 1);
-
-            return { newChapter, thumbnail, view, name, updatedAt, slug };
-        });
-
-        return newMangaData;
-    }
-
-    public async getCompletedManga(page: number = 1) {
-        const { data } = await this.client.get(
-            `${this.baseUrl}/truyen-full?page=${page}`,
-        );
-        const { window } = new JSDOM(data);
-        const { document } = window;
-
+    private parseSource(document: Document): NtDataList {
         const mangaList = document.querySelectorAll('.ModuleContent .item');
 
         const mangaData = [...mangaList].map((manga) => {
@@ -88,5 +56,35 @@ export default class NtModel extends Scraper {
         );
 
         return { mangaData, totalPages };
+    }
+
+    public async searchParams(
+        status: number,
+        sort: number,
+        genres?: string,
+        page: number = 1,
+    ) {
+        const _genres = genres !== 'undefined' ? `/${genres}` : '';
+        console.log(
+            `${this.baseUrl}/tim-truyen${_genres}?status=${status}&sort=${sort}&page=${page}`,
+        );
+
+        const { data } = await this.client.get(
+            `${this.baseUrl}/tim-truyen${_genres}?status=${status}&sort=${sort}&page=${page}`,
+        );
+        const { window } = new JSDOM(data);
+        const { document } = window;
+
+        return this.parseSource(document);
+    }
+
+    public async getCompletedManga(page: number = 1) {
+        const { data } = await this.client.get(
+            `${this.baseUrl}/truyen-full?page=${page}`,
+        );
+        const { window } = new JSDOM(data);
+        const { document } = window;
+
+        return this.parseSource(document);
     }
 }
