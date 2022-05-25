@@ -176,13 +176,101 @@ export default class NtModel extends Scraper {
         return this.parseSource(document);
     }
 
-    public async getMangaDetail() {
-        const baseUrlMangaDetail = '/truyen-tranh';
+    public async getMangaDetail(mangaSlug: string) {
+        const baseUrlMangaDetail = 'truyen-tranh';
 
         const { data } = await this.client.get(
-            `${this.baseUrl}${baseUrlMangaDetail}`,
+            `${this.baseUrl}/${baseUrlMangaDetail}/${mangaSlug}`,
         );
         const { window } = new JSDOM(data);
         const { document } = window;
+
+        const rootSelector = '#item-detail';
+
+        const title = normalizeString(
+            String(document.querySelector(`${rootSelector} h1`)?.textContent),
+        );
+        const updatedAt = normalizeString(
+            String(document.querySelector(`${rootSelector} time`)?.textContent),
+        );
+        const otherName = normalizeString(
+            String(
+                document.querySelector(
+                    `${rootSelector} .detail-info .other-name`,
+                )?.textContent,
+            ),
+        );
+
+        const author = normalizeString(
+            String(
+                document.querySelectorAll(
+                    `${rootSelector} .detail-info .author p`,
+                )[1].textContent,
+            ),
+        );
+        const status = normalizeString(
+            String(
+                document.querySelectorAll(
+                    `${rootSelector} .detail-info .status p`,
+                )[1].textContent,
+            ),
+        );
+        const genresArrayRaw = document
+            .querySelectorAll(`${rootSelector} .kind p`)[1]
+            .querySelectorAll('a');
+        const genres = [...genresArrayRaw].map((genre) => {
+            const genreTitle = normalizeString(String(genre.textContent));
+            const hrefString = String(genre.getAttribute('href'));
+            const slug = hrefString.substring(hrefString.lastIndexOf('/') + 1);
+
+            return { genreTitle, slug };
+        });
+
+        const lastChildUl = document.querySelectorAll(
+            `${rootSelector} .detail-info .list-info .row`,
+        )[4];
+        const view = normalizeString(
+            String(lastChildUl.querySelectorAll('p')[1].textContent),
+        );
+        const review = normalizeString(
+            String(
+                document.querySelector(`${rootSelector} .detail-content p`)
+                    ?.textContent,
+            ),
+        );
+
+        const chapterListRaw = document.querySelectorAll(
+            `${rootSelector} #nt_listchapter ul .row`,
+        );
+        const chapterList = [...chapterListRaw].map((chapter) => {
+            const chapterTitle = normalizeString(
+                String(chapter.querySelector('a')?.textContent),
+            );
+            const chapterId = chapter
+                .querySelector('a')
+                ?.getAttribute('data-id');
+
+            const updatedAt = normalizeString(
+                String(chapter.querySelectorAll('div')[1].textContent),
+            );
+
+            const view = normalizeString(
+                String(chapter.querySelectorAll('div')[2].textContent),
+            );
+
+            return { chapterId, chapterTitle, updatedAt, view };
+        });
+
+        return {
+            title,
+            updatedAt,
+            otherName,
+            author,
+            status,
+            genres,
+            view,
+            review,
+            chapterList,
+        };
     }
 }

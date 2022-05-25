@@ -89,7 +89,42 @@ function ntController() {
         });
     };
 
-    return { getCompletedManga, getNewManga, search };
+    const getManga = async (
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ) => {
+        const { mangaSlug } = req.params;
+
+        const {
+            title,
+            updatedAt,
+            otherName,
+            author,
+            status,
+            genres,
+            view,
+            review,
+            chapterList,
+        } = await Nt.getMangaDetail(String(mangaSlug));
+
+        res.status(200).json({
+            success: true,
+            data: {
+                title,
+                updatedAt,
+                otherName,
+                author,
+                status,
+                genres,
+                view,
+                review,
+                chapterList,
+            },
+        });
+    };
+
+    return { getCompletedManga, getNewManga, search, getManga };
 }
 
 export default ntController;

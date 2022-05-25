@@ -10,7 +10,7 @@ router.route('/search').get(ntController().search);
 /*
 /nt/manga
 */
-router.route('/search').get(ntController().search);
+router.route('/manga/:mangaSlug').get(ntController().getManga);
 
 /*
 /nt/new
