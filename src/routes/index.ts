@@ -7,11 +7,9 @@ function route(app: Express) {
     const src_2 = 'lh';
     const src_3 = 'tmzz';
 
-    app.use(`/${src_1}`, ntRoutes);
+    app.use(`/api/${src_1}`, ntRoutes);
 
-    // app.use(`/${src_2}/recently`, recentlyRoute);
-
-    app.use(`/${src_3}`, tmzzRoutes);
+    app.use(`/api/${src_3}`, tmzzRoutes);
 }
 
 export default route;
