@@ -137,7 +137,7 @@ function ntController() {
             String(chapterId),
         );
 
-        res.status(200).json({
+        res.json({
             success: true,
             data: chapterSrc,
         });
