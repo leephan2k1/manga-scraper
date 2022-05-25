@@ -2,7 +2,7 @@ import Scraper from '../libs/Scraper';
 import { JSDOM } from 'jsdom';
 import { AxiosRequestConfig } from 'axios';
 import { NtDataList } from '../types/nt';
-import { isExactMatch } from '../utils/stringHandler';
+import { isExactMatch, normalizeString } from '../utils/stringHandler';
 import { GENRES } from '../types/genres';
 
 export default class NtModel extends Scraper {
@@ -36,20 +36,22 @@ export default class NtModel extends Scraper {
             const newChapter = manga.querySelector('ul > li > a')?.innerHTML;
             const updatedAt = manga.querySelector('ul > li > i')?.innerHTML;
             const view = manga.querySelector('pull-left > i')?.innerHTML;
-            const name = String(manga.querySelector('h3 a')?.innerHTML).replace(
-                /(\r\n|\n|\r)/gm,
-                '',
+            const name = normalizeString(
+                String(manga.querySelector('h3 a')?.innerHTML),
             );
+
             const tooltip = manga.querySelectorAll('.box_li .message_main p');
             let status: string | null = '';
             let author: string | null = '';
             let genres: string[] | null = [''];
-
+            let otherName: string | null = '';
             tooltip.forEach((item) => {
                 const title = item.querySelector('label')?.textContent;
-                const str = String(item.textContent)
-                    .replace(/(\r\n|\n|\r)/gm, '')
-                    .substring(String(item.textContent).lastIndexOf(':'));
+                const str = normalizeString(
+                    String(item.textContent).substring(
+                        String(item.textContent).lastIndexOf(':') + 1,
+                    ),
+                );
 
                 switch (title) {
                     case 'Thể loại:':
@@ -61,8 +63,15 @@ export default class NtModel extends Scraper {
                     case 'Tình trạng:':
                         status = str;
                         break;
+                    case 'Tên khác:':
+                        otherName = str;
+                        break;
                 }
             });
+
+            const review = normalizeString(
+                String(manga.querySelector('.box_li .box_text')?.textContent),
+            );
 
             const path = String(
                 manga.querySelector('h3 a')?.getAttribute('href'),
@@ -73,6 +82,8 @@ export default class NtModel extends Scraper {
                 status,
                 author,
                 genres,
+                otherName,
+                review,
                 newChapter,
                 thumbnail,
                 view,
@@ -163,5 +174,15 @@ export default class NtModel extends Scraper {
         const { document } = window;
 
         return this.parseSource(document);
+    }
+
+    public async getMangaDetail() {
+        const baseUrlMangaDetail = '/truyen-tranh';
+
+        const { data } = await this.client.get(
+            `${this.baseUrl}${baseUrlMangaDetail}`,
+        );
+        const { window } = new JSDOM(data);
+        const { document } = window;
     }
 }

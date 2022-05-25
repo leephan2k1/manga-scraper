@@ -8,6 +8,8 @@ export interface MangaPreview {
     status: string | null;
     author: string | null;
     genres: string[] | null;
+    otherName?: string | null;
+    review: string | null;
 }
 
 export interface NtDataList {
