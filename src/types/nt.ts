@@ -5,6 +5,9 @@ export interface MangaPreview {
     name: string;
     updatedAt: string | undefined;
     slug: string;
+    status: string | null;
+    author: string | null;
+    genres: string[] | null;
 }
 
 export interface NtDataList {

@@ -40,12 +40,46 @@ export default class NtModel extends Scraper {
                 /(\r\n|\n|\r)/gm,
                 '',
             );
+            const tooltip = manga.querySelectorAll('.box_li .message_main p');
+            let status: string | null = '';
+            let author: string | null = '';
+            let genres: string[] | null = [''];
+
+            tooltip.forEach((item) => {
+                const title = item.querySelector('label')?.textContent;
+                const str = String(item.textContent)
+                    .replace(/(\r\n|\n|\r)/gm, '')
+                    .substring(String(item.textContent).lastIndexOf(':'));
+
+                switch (title) {
+                    case 'Thể loại:':
+                        genres = str.split(', ');
+                        break;
+                    case 'Tác giả:':
+                        author = str;
+                        break;
+                    case 'Tình trạng:':
+                        status = str;
+                        break;
+                }
+            });
+
             const path = String(
                 manga.querySelector('h3 a')?.getAttribute('href'),
             );
             const slug = path.substring(path.lastIndexOf('/') + 1);
 
-            return { newChapter, thumbnail, view, name, updatedAt, slug };
+            return {
+                status,
+                author,
+                genres,
+                newChapter,
+                thumbnail,
+                view,
+                name,
+                updatedAt,
+                slug,
+            };
         });
 
         const totalPagesPath = String(
