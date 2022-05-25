@@ -15,9 +15,10 @@ export default abstract class Scraper {
                 origin: baseUrl,
             },
             timeout: timeout || 10000,
+            ...axiosConfig,
         };
 
         this.baseUrl = baseUrl;
-        this.client = axios.create(axiosConfig);
+        this.client = axios.create(config);
     }
 }
