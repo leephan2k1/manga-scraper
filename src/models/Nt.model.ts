@@ -273,4 +273,43 @@ export default class NtModel extends Scraper {
             chapterList,
         };
     }
+
+    public async getChapterSrc(
+        mangaSlug: string,
+        chapter: number,
+        chapterId: string,
+    ) {
+        const { data } = await this.client.get(
+            `${this.baseUrl}/truyen-tranh/${mangaSlug}/chap-${chapter}/${chapterId}`,
+        );
+        const { window } = new JSDOM(data);
+        const { document } = window;
+        const protocols = ['http', 'https'];
+
+        const pagesRaw = document.querySelectorAll(
+            '.reading-detail .page-chapter',
+        );
+
+        const pages = [...pagesRaw].map((page) => {
+            const id = page.querySelector('img')?.dataset.index;
+
+            const source = page.querySelector('img')?.dataset.original;
+            const srcCDN = page.querySelector('img')?.dataset.cdn;
+
+            const imgSrc = protocols.some((protocol) =>
+                source?.includes(protocol),
+            )
+                ? source
+                : `https:${source}`;
+            const imgSrcCDN = protocols.some((protocol) =>
+                srcCDN?.includes(protocol),
+            )
+                ? srcCDN
+                : `https:${srcCDN}`;
+
+            return { id, imgSrc, imgSrcCDN };
+        });
+
+        return pages;
+    }
 }

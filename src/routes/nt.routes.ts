@@ -13,6 +13,13 @@ router.route('/search').get(ntController().search);
 router.route('/manga/:mangaSlug').get(ntController().getManga);
 
 /*
+/nt/chapter
+*/
+router
+    .route('/chapter/:mangaSlug/:chapter/:chapterId')
+    .get(ntController().getChapter);
+
+/*
 /nt/new
 */
 router.route('/new').get(ntController().getNewManga);

@@ -124,7 +124,26 @@ function ntController() {
         });
     };
 
-    return { getCompletedManga, getNewManga, search, getManga };
+    const getChapter = async (
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ) => {
+        const { mangaSlug, chapter, chapterId } = req.params;
+
+        const chapterSrc = await Nt.getChapterSrc(
+            String(mangaSlug),
+            Number(chapter),
+            String(chapterId),
+        );
+
+        res.status(200).json({
+            success: true,
+            data: chapterSrc,
+        });
+    };
+
+    return { getCompletedManga, getNewManga, search, getManga, getChapter };
 }
 
 export default ntController;
