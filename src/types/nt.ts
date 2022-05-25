@@ -12,6 +12,21 @@ export interface MangaPreview {
     review: string | null;
 }
 
+//nettruyen config: https://www.nettruyenco.com/tim-truyen?status=-1&sort=10
+export enum MANGA_STATUS {
+    'all' = -1,
+    'completed' = 2,
+    'ongoing' = 1,
+}
+//nettruyen config: https://www.nettruyenco.com/tim-truyen?status=-1&sort=10
+export enum MANGA_SORT {
+    'all' = 10,
+    'month',
+    'week',
+    'day',
+    'chapter' = 30,
+}
+
 export interface NtDataList {
     mangaData: MangaPreview[];
     totalPages: number;

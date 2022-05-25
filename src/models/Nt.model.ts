@@ -176,6 +176,20 @@ export default class NtModel extends Scraper {
         return this.parseSource(document);
     }
 
+    public async gerRanking(
+        top: number,
+        status: number = -1,
+        page: number = 1,
+    ) {
+        const { data } = await this.client.get(
+            `${this.baseUrl}/tim-truyen?status=${status}&sort=${top}&page=${page}`,
+        );
+        const { window } = new JSDOM(data);
+        const { document } = window;
+
+        return this.parseSource(document);
+    }
+
     public async getMangaDetail(mangaSlug: string) {
         const baseUrlMangaDetail = 'truyen-tranh';
 

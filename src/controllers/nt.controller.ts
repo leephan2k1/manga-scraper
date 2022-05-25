@@ -2,9 +2,16 @@ import dotenv from 'dotenv';
 dotenv.config();
 import { Request, Response, NextFunction } from 'express';
 import NtModel from '../models/Nt.model';
+import { MANGA_SORT, MANGA_STATUS } from '../types/nt';
 
 const baseUrl = process.env.NT_SOURCE_URL as string;
 const Nt = NtModel.Instance(baseUrl);
+
+interface RankingQuery {
+    top: 'all' | 'month' | 'week' | 'day' | 'chapter' | undefined;
+    page?: number;
+    status?: 'all' | 'completed' | 'ongoing' | undefined;
+}
 
 function ntController() {
     const getCompletedManga = async (
@@ -45,13 +52,40 @@ function ntController() {
         );
 
         if (!mangaData.length) {
-            return res.status(401).json({ success: false });
+            return res.status(404).json({ success: false });
         }
 
         res.status(200).json({
             success: true,
             data: mangaData,
             totalPages,
+            hasPrevPage: Number(page) > 1 ? true : false,
+            hasNextPage: Number(page) < Number(totalPages) ? true : false,
+        });
+    };
+
+    const getRanking = async (
+        req: Request<{}, {}, {}, RankingQuery>,
+        res: Response,
+        next: NextFunction,
+    ) => {
+        const { top, page, status } = req.query;
+
+        //nettruyen config: https://www.nettruyenco.com/tim-truyen?status=-1&sort=10
+
+        const { mangaData, totalPages } = await Nt.gerRanking(
+            top !== undefined ? MANGA_SORT[top] : 10,
+            status !== undefined ? MANGA_STATUS[status] : -1,
+            page !== undefined ? page : 1,
+        );
+
+        if (!mangaData.length) {
+            return res.status(404).json({ success: false });
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: mangaData,
             hasPrevPage: Number(page) > 1 ? true : false,
             hasNextPage: Number(page) < Number(totalPages) ? true : false,
         });
@@ -143,7 +177,14 @@ function ntController() {
         });
     };
 
-    return { getCompletedManga, getNewManga, search, getManga, getChapter };
+    return {
+        getCompletedManga,
+        getNewManga,
+        search,
+        getManga,
+        getChapter,
+        getRanking,
+    };
 }
 
 export default ntController;

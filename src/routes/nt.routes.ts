@@ -8,6 +8,11 @@ const router = Router();
 router.route('/search').get(ntController().search);
 
 /*
+/nt/ranking
+*/
+router.route('/ranking').get(ntController().getRanking);
+
+/*
 /nt/manga
 */
 router.route('/manga/:mangaSlug').get(ntController().getManga);
