@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import createError from 'http-errors';
 import route from './routes';
+import logger from 'morgan';
 
 dotenv.config();
 const app = express();
@@ -12,6 +13,7 @@ const port = app.get('port') || 5000;
 //apply middleware
 app.use(cors());
 app.use(express.json());
+app.use(logger('dev'));
 
 //router
 route(app);
