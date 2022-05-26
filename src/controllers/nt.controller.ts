@@ -13,17 +13,30 @@ interface RankingQuery {
     status?: 'all' | 'completed' | 'ongoing' | undefined;
 }
 
+interface SearchQuery extends Pick<RankingQuery, 'page'> {
+    q: string;
+    limit?: number;
+}
+
 interface AuthorQuery {
     name: string;
 }
 
-interface NewMangaQuery {
-    page?: number;
+interface NewMangaQuery extends Pick<RankingQuery, 'page'> {
     genres: string;
 }
 
 interface FiltersManga extends Partial<RankingQuery> {
     genres?: string;
+}
+
+interface MangaParams {
+    mangaSlug: string;
+}
+
+interface ChapterParams extends MangaParams {
+    chapter: number;
+    chapterId: string;
 }
 
 function ntController() {
@@ -55,7 +68,7 @@ function ntController() {
     };
 
     const getCompletedManga = async (
-        req: Request,
+        req: Request<{}, {}, {}, Pick<NewMangaQuery, 'page'>>,
         res: Response,
         next: NextFunction,
     ) => {
@@ -131,7 +144,11 @@ function ntController() {
         });
     };
 
-    const search = async (req: Request, res: Response, next: NextFunction) => {
+    const search = async (
+        req: Request<{}, {}, {}, SearchQuery>,
+        res: Response,
+        next: NextFunction,
+    ) => {
         const { q, limit } = req.query;
         let { page } = req.query;
 
@@ -144,7 +161,7 @@ function ntController() {
         let _mangaData = [...mangaData];
         let hasNextPage = false;
         if (limit) {
-            if (!page) page = '1';
+            if (!page) page = 1;
 
             _mangaData = _mangaData.slice(
                 (Number(page) - 1) * Number(limit),
@@ -165,7 +182,7 @@ function ntController() {
     };
 
     const getManga = async (
-        req: Request,
+        req: Request<MangaParams>,
         res: Response,
         next: NextFunction,
     ) => {
@@ -200,7 +217,7 @@ function ntController() {
     };
 
     const getChapter = async (
-        req: Request,
+        req: Request<ChapterParams>,
         res: Response,
         next: NextFunction,
     ) => {
