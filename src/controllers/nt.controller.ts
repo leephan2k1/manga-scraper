@@ -13,6 +13,10 @@ interface RankingQuery {
     status?: 'all' | 'completed' | 'ongoing' | undefined;
 }
 
+interface AuthorQuery {
+    name: string;
+}
+
 function ntController() {
     const getCompletedManga = async (
         req: Request,
@@ -26,7 +30,7 @@ function ntController() {
         );
 
         if (!mangaData.length) {
-            return res.status(401).json({ success: false });
+            return res.status(404).json({ success: false });
         }
 
         res.status(200).json({
@@ -98,7 +102,7 @@ function ntController() {
         const { mangaData, totalPages } = await Nt.searchQuery(String(q));
 
         if (!mangaData.length) {
-            return res.status(401).json({ success: false });
+            return res.status(404).json({ success: false });
         }
 
         let _mangaData = [...mangaData];
@@ -177,9 +181,32 @@ function ntController() {
         });
     };
 
+    const getMangaAuthor = async (
+        req: Request<{}, {}, {}, AuthorQuery>,
+        res: Response,
+        next: NextFunction,
+    ) => {
+        const { name } = req.query;
+
+        const { mangaData, totalPages } = await Nt.getMangaAuthor(
+            name.trim().replace(/\s/g, '+'),
+        );
+
+        if (!mangaData.length) {
+            return res.status(404).json({ success: false });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: mangaData,
+            totalPages,
+        });
+    };
+
     return {
         getCompletedManga,
         getNewManga,
+        getMangaAuthor,
         search,
         getManga,
         getChapter,

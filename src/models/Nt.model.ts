@@ -105,6 +105,16 @@ export default class NtModel extends Scraper {
         return { mangaData, totalPages };
     }
 
+    public async getMangaAuthor(author: string) {
+        const { data } = await this.client.get(
+            `${this.baseUrl}/tim-truyen?tac-gia=${author}`,
+        );
+        const { window } = new JSDOM(data);
+        const { document } = window;
+
+        return this.parseSource(document);
+    }
+
     public async searchParams(
         status: number,
         sort: number,
