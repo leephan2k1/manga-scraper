@@ -186,7 +186,7 @@ export default class NtModel extends Scraper {
         return this.parseSource(document);
     }
 
-    public async gerRanking(
+    public async getRanking(
         top: number,
         status: number = -1,
         page: number = 1,

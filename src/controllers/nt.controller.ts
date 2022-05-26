@@ -17,6 +17,11 @@ interface AuthorQuery {
     name: string;
 }
 
+interface NewMangaQuery {
+    page?: number;
+    genres: string;
+}
+
 function ntController() {
     const getCompletedManga = async (
         req: Request,
@@ -43,7 +48,7 @@ function ntController() {
     };
 
     const getNewManga = async (
-        req: Request,
+        req: Request<{}, {}, {}, NewMangaQuery>,
         res: Response,
         next: NextFunction,
     ) => {
@@ -77,7 +82,7 @@ function ntController() {
 
         //nettruyen config: https://www.nettruyenco.com/tim-truyen?status=-1&sort=10
 
-        const { mangaData, totalPages } = await Nt.gerRanking(
+        const { mangaData, totalPages } = await Nt.getRanking(
             top !== undefined ? MANGA_SORT[top] : 10,
             status !== undefined ? MANGA_STATUS[status] : -1,
             page !== undefined ? page : 1,
@@ -122,6 +127,7 @@ function ntController() {
         res.status(200).json({
             success: true,
             data: _mangaData,
+            totalPages,
             hasPrevPage: Number(page) > 1 ? true : false,
             hasNextPage,
         });
