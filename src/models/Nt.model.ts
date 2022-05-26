@@ -132,6 +132,43 @@ export default class NtModel extends Scraper {
         return this.parseSource(document);
     }
 
+    public async filtersManga(
+        genres: string | null,
+        page?: number | null,
+        sort?: number | null,
+        status?: number | null,
+    ) {
+        const _genres = genres !== null ? `/${genres}` : '';
+
+        const queryParams: string[] = [];
+        if (sort) queryParams.push(`sort=${sort}`);
+        if (status) queryParams.push(`status=${status}`);
+        if (page) queryParams.push(`page=${page}`);
+
+        //first query:
+        if (queryParams[0]) queryParams[0] = '?'.concat(queryParams[0]);
+        //rest query:
+        for (let i = 1; i < queryParams.length; i++) {
+            if (queryParams[i]) {
+                queryParams[i] = '&'.concat(queryParams[i]);
+            }
+        }
+        /*
+        if all are null, default status: 'all', sort: 'new'
+        see: https://www.nettruyenco.com/tim-truyen
+        */
+        // console.log(
+        //     `::: ${this.baseUrl}/tim-truyen${_genres}${queryParams.join('')}`,
+        // );
+        const { data } = await this.client.get(
+            `${this.baseUrl}/tim-truyen${_genres}${queryParams.join('')}`,
+        );
+        const { window } = new JSDOM(data);
+        const { document } = window;
+
+        return this.parseSource(document);
+    }
+
     public async searchQuery(query: string) {
         const baseUrlSearch = `/Comic/Services/SuggestSearch.ashx?q=${encodeURIComponent(
             query,

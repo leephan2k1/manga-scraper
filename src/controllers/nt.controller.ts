@@ -22,7 +22,38 @@ interface NewMangaQuery {
     genres: string;
 }
 
+interface FiltersManga extends Partial<RankingQuery> {
+    genres?: string;
+}
+
 function ntController() {
+    const filtersManga = async (
+        req: Request<{}, {}, {}, FiltersManga>,
+        res: Response,
+        next: NextFunction,
+    ) => {
+        const { page, genres, top, status } = req.query;
+
+        const { mangaData, totalPages } = await Nt.filtersManga(
+            genres !== undefined ? genres : null,
+            page !== undefined ? page : null,
+            top !== undefined ? MANGA_SORT[top] : null,
+            status !== undefined ? MANGA_STATUS[status] : -1,
+        );
+
+        if (!mangaData.length) {
+            return res.status(404).json({ success: false });
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: mangaData,
+            totalPages,
+            hasPrevPage: Number(page) > 1 ? true : false,
+            hasNextPage: Number(page) < Number(totalPages) ? true : false,
+        });
+    };
+
     const getCompletedManga = async (
         req: Request,
         res: Response,
@@ -217,6 +248,7 @@ function ntController() {
         getManga,
         getChapter,
         getRanking,
+        filtersManga,
     };
 }
 

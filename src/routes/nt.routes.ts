@@ -13,6 +13,11 @@ router.route('/search').get(ntController().search);
 router.route('/author').get(ntController().getMangaAuthor);
 
 /*
+/nt/filters
+*/
+router.route('/filters').get(ntController().filtersManga);
+
+/*
 /nt/ranking
 */
 router.route('/ranking').get(ntController().getRanking);
