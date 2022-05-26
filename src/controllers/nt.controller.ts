@@ -40,6 +40,18 @@ interface ChapterParams extends MangaParams {
 }
 
 function ntController() {
+    // const testRoute = async (
+    //     req: Request,
+    //     res: Response,
+    //     next: NextFunction,
+    // ) => {
+    //     const dataTest = await Nt.testModel();
+
+    //     return res.status(200).json({
+    //         data: dataTest,
+    //     });
+    // };
+
     const filtersManga = async (
         req: Request<{}, {}, {}, FiltersManga>,
         res: Response,

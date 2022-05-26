@@ -373,4 +373,21 @@ export default class NtModel extends Scraper {
 
         return pages;
     }
+
+    // public async testModel() {
+    //     const { data } = await this.client.get(`${this.baseUrl}/tim-truyen`);
+    //     const { window } = new JSDOM(data);
+    //     const { document } = window;
+
+    //     const aTags = document.querySelectorAll(
+    //         '.box.darkBox.genres .ModuleContent a',
+    //     );
+
+    //     const dataTest = [...aTags].map((a) => {
+    //         const src = a.getAttribute('href');
+    //         return String(src).substring(String(src).lastIndexOf('/') + 1);
+    //     });
+
+    //     return dataTest;
+    // }
 }

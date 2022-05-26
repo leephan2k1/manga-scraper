@@ -44,4 +44,10 @@ router.route('/new').get(ntController().getNewManga);
 */
 router.route('/completed').get(ntController().getCompletedManga);
 
+/*
+this route just test!
+/nt/test
+*/
+// router.route('/test').get(ntController().testRoute);
+
 export default router;
