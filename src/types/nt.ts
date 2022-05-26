@@ -24,6 +24,7 @@ export enum MANGA_SORT {
     'month',
     'week',
     'day',
+    'new' = 15,
     'chapter' = 30,
 }
 
