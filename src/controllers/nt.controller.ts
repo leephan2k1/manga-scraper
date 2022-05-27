@@ -141,7 +141,7 @@ function ntController() {
         const { mangaData, totalPages } = await Nt.getRanking(
             top !== undefined ? MANGA_SORT[top] : 10,
             status !== undefined ? MANGA_STATUS[status] : -1,
-            page !== undefined ? page : 1,
+            page !== undefined ? page : undefined,
         );
 
         if (!mangaData.length) {
@@ -254,9 +254,7 @@ function ntController() {
     ) => {
         const { name } = req.query;
 
-        const { mangaData, totalPages } = await Nt.getMangaAuthor(
-            name.trim().replace(/\s/g, '+'),
-        );
+        const { mangaData, totalPages } = await Nt.getMangaAuthor(name.trim());
 
         if (!mangaData.length) {
             return res.status(404).json({ success: false });

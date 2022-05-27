@@ -5,6 +5,12 @@ import { NtDataList } from '../types/nt';
 import { isExactMatch, normalizeString } from '../utils/stringHandler';
 import { GENRES } from '../types/genres';
 
+interface QueryParams {
+    sort?: number;
+    status?: number;
+    page?: number;
+}
+
 export default class NtModel extends Scraper {
     private static instance: NtModel;
 
@@ -106,9 +112,9 @@ export default class NtModel extends Scraper {
     }
 
     public async getMangaAuthor(author: string) {
-        const { data } = await this.client.get(
-            `${this.baseUrl}/tim-truyen?tac-gia=${author}`,
-        );
+        const { data } = await this.client.get(`${this.baseUrl}/tim-truyen`, {
+            params: { 'tac-gia': author },
+        });
         const { window } = new JSDOM(data);
         const { document } = window;
 
@@ -123,8 +129,15 @@ export default class NtModel extends Scraper {
     ) {
         const _genres = genres !== 'undefined' ? `/${genres}` : '';
 
+        const queryParams = {
+            status: status,
+            sort: sort,
+            page: page,
+        };
+
         const { data } = await this.client.get(
-            `${this.baseUrl}/tim-truyen${_genres}?status=${status}&sort=${sort}&page=${page}`,
+            `${this.baseUrl}/tim-truyen${_genres}`,
+            { params: queryParams },
         );
         const { window } = new JSDOM(data);
         const { document } = window;
@@ -140,28 +153,22 @@ export default class NtModel extends Scraper {
     ) {
         const _genres = genres !== null ? `/${genres}` : '';
 
-        const queryParams: string[] = [];
-        if (sort) queryParams.push(`sort=${sort}`);
-        if (status) queryParams.push(`status=${status}`);
-        if (page) queryParams.push(`page=${page}`);
+        const queryParams: QueryParams = {};
 
-        //first query:
-        if (queryParams[0]) queryParams[0] = '?'.concat(queryParams[0]);
-        //rest query:
-        for (let i = 1; i < queryParams.length; i++) {
-            if (queryParams[i]) {
-                queryParams[i] = '&'.concat(queryParams[i]);
-            }
-        }
+        if (sort) queryParams.sort = sort;
+        if (status) queryParams.status = status;
+        if (page) queryParams.page = page;
+
+        // console.log('>>> ', queryParams);
+
         /*
         if all are null, default status: 'all', sort: 'new'
         see: https://www.nettruyenco.com/tim-truyen
         */
-        // console.log(
-        //     `::: ${this.baseUrl}/tim-truyen${_genres}${queryParams.join('')}`,
-        // );
+
         const { data } = await this.client.get(
-            `${this.baseUrl}/tim-truyen${_genres}${queryParams.join('')}`,
+            `${this.baseUrl}/tim-truyen${_genres}`,
+            { params: queryParams },
         );
         const { window } = new JSDOM(data);
         const { document } = window;
@@ -170,11 +177,10 @@ export default class NtModel extends Scraper {
     }
 
     public async searchQuery(query: string) {
-        const baseUrlSearch = `/Comic/Services/SuggestSearch.ashx?q=${encodeURIComponent(
-            query,
-        )}`;
+        const baseUrlSearch = `/Comic/Services/SuggestSearch.ashx`;
         const { data } = await this.client.get(
             `${this.baseUrl}${baseUrlSearch}`,
+            { params: { q: query } },
         );
         const { window } = new JSDOM(data);
         const { document } = window;
@@ -214,9 +220,9 @@ export default class NtModel extends Scraper {
     }
 
     public async getCompletedManga(page: number = 1) {
-        const { data } = await this.client.get(
-            `${this.baseUrl}/truyen-full?page=${page}`,
-        );
+        const { data } = await this.client.get(`${this.baseUrl}/truyen-full`, {
+            params: { page: page },
+        });
         const { window } = new JSDOM(data);
         const { document } = window;
 
@@ -226,11 +232,20 @@ export default class NtModel extends Scraper {
     public async getRanking(
         top: number,
         status: number = -1,
-        page: number = 1,
+        page: number | undefined,
     ) {
-        const { data } = await this.client.get(
-            `${this.baseUrl}/tim-truyen?status=${status}&sort=${top}&page=${page}`,
-        );
+        const queryParams = {
+            status: status,
+            sort: top,
+            page: page,
+        };
+
+        // console.log('>>> ', queryParams);
+
+        const { data } = await this.client.get(`${this.baseUrl}/tim-truyen`, {
+            params: queryParams,
+        });
+
         const { window } = new JSDOM(data);
         const { document } = window;
 
