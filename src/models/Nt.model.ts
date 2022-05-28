@@ -397,9 +397,12 @@ export default class NtModel extends Scraper {
 
         const lastChildUl = document.querySelectorAll(
             `${rootSelector} .detail-info .list-info .row`,
-        )[4];
+        );
         const view = normalizeString(
-            String(lastChildUl.querySelectorAll('p')[1].textContent),
+            String(
+                lastChildUl[lastChildUl.length - 1].querySelectorAll('p')[1]
+                    .textContent,
+            ),
         );
         const review = normalizeString(
             String(
