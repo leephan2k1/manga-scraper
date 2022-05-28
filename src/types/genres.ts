@@ -54,4 +54,4 @@ export const GENRES = [
     'Webtoon',
     'Xuyên Không',
     '16+',
-];
+] as const;

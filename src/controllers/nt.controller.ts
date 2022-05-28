@@ -116,14 +116,10 @@ function ntController() {
             String(genres),
         );
 
-        if (!mangaData.length) {
-            return res.status(404).json({ success: false });
-        }
-
         res.status(200).json({
             success: true,
             data: mangaData,
-            totalPages,
+            totalPages: totalPages,
             hasPrevPage: Number(page) > 1 ? true : false,
             hasNextPage: Number(page) < Number(totalPages) ? true : false,
         });

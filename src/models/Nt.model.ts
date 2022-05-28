@@ -1,9 +1,19 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import Scraper from '../libs/Scraper';
 import { JSDOM } from 'jsdom';
 import { AxiosRequestConfig } from 'axios';
 import { NtDataList } from '../types/nt';
 import { isExactMatch, normalizeString } from '../utils/stringHandler';
 import { GENRES } from '../types/genres';
+import { DEFAULT_EXPIRED_NEWMANGA_TIME } from '../constants/nt';
+
+import Redis from '../libs/Redis';
+
+const redisPort = Number(process.env.REDIS_PORT) || 6379;
+const redisHost = process.env.REDIS_HOST || '127.0.0.1';
+
+const cachingClient = Redis.Instance(redisPort, redisHost).getRedisClient();
 
 interface QueryParams {
     sort?: number;
@@ -130,19 +140,40 @@ export default class NtModel extends Scraper {
         const _genres = genres !== 'undefined' ? `/${genres}` : '';
 
         const queryParams = {
-            status: status,
-            sort: sort,
-            page: page,
+            status,
+            sort,
+            page,
         };
 
-        const { data } = await this.client.get(
-            `${this.baseUrl}/tim-truyen${_genres}`,
-            { params: queryParams },
-        );
-        const { window } = new JSDOM(data);
-        const { document } = window;
+        const key = `newManga?id=${_genres}${status}${sort}${page}`;
 
-        return this.parseSource(document);
+        const resultCache = await cachingClient.get(key);
+
+        if (!resultCache) {
+            console.log('cache miss');
+            const { data } = await this.client.get(
+                `${this.baseUrl}/tim-truyen${_genres}`,
+                { params: queryParams },
+            );
+            const { window } = new JSDOM(data);
+            const { document } = window;
+
+            const { mangaData, totalPages } = this.parseSource(document);
+
+            cachingClient.setEx(
+                key,
+                DEFAULT_EXPIRED_NEWMANGA_TIME,
+                JSON.stringify({
+                    mangaData,
+                    totalPages,
+                }),
+            );
+
+            return { mangaData, totalPages };
+        }
+
+        console.log('cache hit');
+        return JSON.parse(resultCache);
     }
 
     public async filtersManga(
