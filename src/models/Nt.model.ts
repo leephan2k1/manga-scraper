@@ -10,9 +10,11 @@ import {
     DEFAULT_EXPIRED_NEWMANGA_TIME,
     DEFAULT_EXPIRED_COMPLETED_MANGA_TIME,
     DEFAULT_EXPIRED_RANKING_MANGA_TIME,
+    DEFAULT_EXPIRED_NEW_UPDATED_MANGA_TIME,
     KEY_CACHE_COMPLETED_MANGA,
     KEY_CACHE_NEW_MANGA,
     KEY_CACHE_RANKING_MANGA,
+    KEY_CACHE_NEW_UPDATED_MANGA,
 } from '../constants/nt';
 
 import Redis from '../libs/Redis';
@@ -182,6 +184,31 @@ export default class NtModel extends Scraper {
             JSON.stringify({ mangaData, totalPages }),
             page,
             DEFAULT_EXPIRED_NEWMANGA_TIME,
+        );
+
+        return { mangaData, totalPages };
+    }
+
+    public async getNewUpdatedManga(page: number = 1) {
+        const queryParams = {
+            page,
+        };
+
+        const key = `${KEY_CACHE_NEW_UPDATED_MANGA}${page}`;
+
+        const { data } = await this.client.get(`${this.baseUrl}/tim-truyen`, {
+            params: queryParams,
+        });
+        const { window } = new JSDOM(data);
+        const { document } = window;
+
+        const { mangaData, totalPages } = this.parseSource(document);
+
+        await this.cache(
+            key,
+            JSON.stringify({ mangaData, totalPages }),
+            page,
+            DEFAULT_EXPIRED_NEW_UPDATED_MANGA_TIME,
         );
 
         return { mangaData, totalPages };

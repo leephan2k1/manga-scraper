@@ -8,6 +8,7 @@ import {
     KEY_CACHE_COMPLETED_MANGA,
     KEY_CACHE_NEW_MANGA,
     KEY_CACHE_RANKING_MANGA,
+    KEY_CACHE_NEW_UPDATED_MANGA,
 } from '../constants/nt';
 
 const redisPort = Number(process.env.REDIS_PORT) || 6379;
@@ -61,6 +62,49 @@ function ntController() {
     //         data: dataTest,
     //     });
     // };
+
+    const getNewUpdatedManga = async (
+        req: Request<{}, {}, {}, Pick<RankingQuery, 'page'>>,
+        res: Response,
+        next: NextFunction,
+    ) => {
+        const { page } = req.query;
+        const _page = page !== undefined ? page : 1;
+
+        const key = `${KEY_CACHE_NEW_UPDATED_MANGA}${_page}`;
+
+        const redisData = await cachingClient.get(key);
+
+        if (!redisData) {
+            const { mangaData, totalPages } = await Nt.getNewUpdatedManga(
+                _page,
+            );
+
+            if (!mangaData.length) {
+                return res.status(404).json({ success: false });
+            }
+
+            return res.status(200).json({
+                success: true,
+                data: mangaData,
+                totalPages,
+                hasPrevPage: Number(page) > 1 ? true : false,
+                hasNextPage: Number(page) < Number(totalPages) ? true : false,
+            });
+        }
+
+        const { mangaData, totalPages } = JSON.parse(String(redisData));
+
+        if (!mangaData.length) return res.status(404).json({ success: false });
+
+        return res.status(200).json({
+            success: true,
+            data: mangaData,
+            totalPages: totalPages,
+            hasPrevPage: Number(page) > 1 ? true : false,
+            hasNextPage: Number(page) < Number(totalPages) ? true : false,
+        });
+    };
 
     const filtersManga = async (
         req: Request<{}, {}, {}, FiltersManga>,
@@ -351,6 +395,7 @@ function ntController() {
         getChapter,
         getRanking,
         filtersManga,
+        getNewUpdatedManga,
     };
 }
 
