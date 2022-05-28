@@ -7,6 +7,7 @@ import Redis from '../libs/Redis';
 import {
     KEY_CACHE_COMPLETED_MANGA,
     KEY_CACHE_NEW_MANGA,
+    KEY_CACHE_RANKING_MANGA,
 } from '../constants/nt';
 
 const redisPort = Number(process.env.REDIS_PORT) || 6379;
@@ -189,11 +190,34 @@ function ntController() {
 
         //nettruyen config: https://www.nettruyenco.com/tim-truyen?status=-1&sort=10
 
-        const { mangaData, totalPages } = await Nt.getRanking(
-            top !== undefined ? MANGA_SORT[top] : 10,
-            status !== undefined ? MANGA_STATUS[status] : -1,
-            page !== undefined ? page : undefined,
-        );
+        const key = `${KEY_CACHE_RANKING_MANGA}${
+            page !== undefined ? page : ''
+        }${top !== undefined ? MANGA_SORT[top] : 10}${
+            status !== undefined ? MANGA_STATUS[status] : -1
+        }`;
+
+        const redisData = await cachingClient.get(key);
+
+        if (!redisData) {
+            const { mangaData, totalPages } = await Nt.getRanking(
+                top !== undefined ? MANGA_SORT[top] : 10,
+                status !== undefined ? MANGA_STATUS[status] : -1,
+                page !== undefined ? page : undefined,
+            );
+
+            if (!mangaData.length) {
+                return res.status(404).json({ success: false });
+            }
+
+            return res.status(200).json({
+                success: true,
+                data: mangaData,
+                hasPrevPage: Number(page) > 1 ? true : false,
+                hasNextPage: Number(page) < Number(totalPages) ? true : false,
+            });
+        }
+
+        const { mangaData, totalPages } = JSON.parse(redisData);
 
         if (!mangaData.length) {
             return res.status(404).json({ success: false });

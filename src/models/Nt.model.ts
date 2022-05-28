@@ -9,8 +9,10 @@ import { GENRES } from '../types/genres';
 import {
     DEFAULT_EXPIRED_NEWMANGA_TIME,
     DEFAULT_EXPIRED_COMPLETED_MANGA_TIME,
+    DEFAULT_EXPIRED_RANKING_MANGA_TIME,
     KEY_CACHE_COMPLETED_MANGA,
     KEY_CACHE_NEW_MANGA,
+    KEY_CACHE_RANKING_MANGA,
 } from '../constants/nt';
 
 import Redis from '../libs/Redis';
@@ -291,6 +293,10 @@ export default class NtModel extends Scraper {
             page: page,
         };
 
+        const key = `${KEY_CACHE_RANKING_MANGA}${
+            page !== undefined ? page : ''
+        }${top}${status}`;
+
         // console.log('>>> ', queryParams);
 
         const { data } = await this.client.get(`${this.baseUrl}/tim-truyen`, {
@@ -300,7 +306,16 @@ export default class NtModel extends Scraper {
         const { window } = new JSDOM(data);
         const { document } = window;
 
-        return this.parseSource(document);
+        const { mangaData, totalPages } = this.parseSource(document);
+
+        this.cache(
+            key,
+            JSON.stringify({ mangaData, totalPages }),
+            page !== undefined ? page : 1,
+            DEFAULT_EXPIRED_RANKING_MANGA_TIME,
+        );
+
+        return { mangaData, totalPages };
     }
 
     public async getMangaDetail(mangaSlug: string) {
