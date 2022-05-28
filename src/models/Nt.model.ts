@@ -6,7 +6,12 @@ import { AxiosRequestConfig } from 'axios';
 import { NtDataList } from '../types/nt';
 import { isExactMatch, normalizeString } from '../utils/stringHandler';
 import { GENRES } from '../types/genres';
-import { DEFAULT_EXPIRED_NEWMANGA_TIME } from '../constants/nt';
+import {
+    DEFAULT_EXPIRED_NEWMANGA_TIME,
+    DEFAULT_EXPIRED_COMPLETED_MANGA_TIME,
+    KEY_CACHE_COMPLETED_MANGA,
+    KEY_CACHE_NEW_MANGA,
+} from '../constants/nt';
 
 import Redis from '../libs/Redis';
 
@@ -121,6 +126,20 @@ export default class NtModel extends Scraper {
         return { mangaData, totalPages };
     }
 
+    private async cache(
+        key: string,
+        value: string,
+        page: number,
+        expiredTime: number = 60, //60s, just test
+    ) {
+        //just always storage page 1,2,3. Other pages just caching
+        if (page === 1 || page === 2 || page === 3) {
+            await cachingClient.set(key, value);
+        } else {
+            await cachingClient.setEx(key, expiredTime, value);
+        }
+    }
+
     public async getMangaAuthor(author: string) {
         const { data } = await this.client.get(`${this.baseUrl}/tim-truyen`, {
             params: { 'tac-gia': author },
@@ -145,7 +164,7 @@ export default class NtModel extends Scraper {
             page,
         };
 
-        const key = `newManga?id=${_genres}${status}${sort}${page}`;
+        const key = `${KEY_CACHE_NEW_MANGA}${_genres}${status}${sort}${page}`;
 
         const { data } = await this.client.get(
             `${this.baseUrl}/tim-truyen${_genres}`,
@@ -156,25 +175,12 @@ export default class NtModel extends Scraper {
 
         const { mangaData, totalPages } = this.parseSource(document);
 
-        //just always storage page 1,2,3. Other pages just caching 3600s
-        if (+page === 1 || +page === 2 || +page === 3) {
-            await cachingClient.set(
-                key,
-                JSON.stringify({
-                    mangaData,
-                    totalPages,
-                }),
-            );
-        } else {
-            await cachingClient.setEx(
-                key,
-                DEFAULT_EXPIRED_NEWMANGA_TIME,
-                JSON.stringify({
-                    mangaData,
-                    totalPages,
-                }),
-            );
-        }
+        await this.cache(
+            key,
+            JSON.stringify({ mangaData, totalPages }),
+            page,
+            DEFAULT_EXPIRED_NEWMANGA_TIME,
+        );
 
         return { mangaData, totalPages };
     }
@@ -254,13 +260,24 @@ export default class NtModel extends Scraper {
     }
 
     public async getCompletedManga(page: number = 1) {
+        const key = `${KEY_CACHE_COMPLETED_MANGA}${page}`;
+
         const { data } = await this.client.get(`${this.baseUrl}/truyen-full`, {
             params: { page: page },
         });
         const { window } = new JSDOM(data);
         const { document } = window;
 
-        return this.parseSource(document);
+        const { mangaData, totalPages } = this.parseSource(document);
+
+        await this.cache(
+            key,
+            JSON.stringify({ mangaData, totalPages }),
+            page,
+            DEFAULT_EXPIRED_COMPLETED_MANGA_TIME,
+        );
+
+        return { mangaData, totalPages };
     }
 
     public async getRanking(

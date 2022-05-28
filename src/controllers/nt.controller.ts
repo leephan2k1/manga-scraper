@@ -4,6 +4,10 @@ import { Request, Response, NextFunction } from 'express';
 import NtModel from '../models/Nt.model';
 import { MANGA_SORT, MANGA_STATUS } from '../types/nt';
 import Redis from '../libs/Redis';
+import {
+    KEY_CACHE_COMPLETED_MANGA,
+    KEY_CACHE_NEW_MANGA,
+} from '../constants/nt';
 
 const redisPort = Number(process.env.REDIS_PORT) || 6379;
 const redisHost = process.env.REDIS_HOST || '127.0.0.1';
@@ -91,18 +95,39 @@ function ntController() {
     ) => {
         const { page } = req.query;
 
-        const { mangaData, totalPages } = await Nt.getCompletedManga(
-            Number(page),
-        );
+        //make sure model same this key:
+        const key = `${KEY_CACHE_COMPLETED_MANGA}${
+            page !== undefined ? page : 1
+        }`;
 
-        if (!mangaData.length) {
-            return res.status(404).json({ success: false });
+        const redisData = await cachingClient.get(key);
+
+        if (!redisData) {
+            const { mangaData, totalPages } = await Nt.getCompletedManga(
+                Number(page),
+            );
+
+            if (!mangaData.length) {
+                return res.status(404).json({ success: false });
+            }
+
+            return res.status(200).json({
+                success: true,
+                data: mangaData,
+                totalPages,
+                hasPrevPage: Number(page) > 1 ? true : false,
+                hasNextPage: Number(page) < Number(totalPages) ? true : false,
+            });
         }
 
-        res.status(200).json({
+        const { mangaData, totalPages } = JSON.parse(String(redisData));
+
+        if (!mangaData.length) return res.status(404).json({ success: false });
+
+        return res.status(200).json({
             success: true,
             data: mangaData,
-            totalPages,
+            totalPages: totalPages,
             hasPrevPage: Number(page) > 1 ? true : false,
             hasNextPage: Number(page) < Number(totalPages) ? true : false,
         });
@@ -116,8 +141,7 @@ function ntController() {
         const { page, genres } = req.query;
         const _genres = genres !== undefined ? `/${genres}` : '';
 
-        //make sure model same this key:
-        const key = `newManga?id=${_genres}${-1}${15}${
+        const key = `${KEY_CACHE_NEW_MANGA}${_genres}${-1}${15}${
             page !== undefined ? page : 1
         }`;
 
