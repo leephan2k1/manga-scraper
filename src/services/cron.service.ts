@@ -18,6 +18,15 @@ async function cachingCompletedManga() {
     await Nt.getCompletedManga(3);
 }
 
+async function cachingRankingManga() {
+    //cache page 1,2,3
+    //default: https://www.nettruyenco.com/tim-truyen?status=-1&sort=10&page=1
+    //genres: all, sort: all, page = this page
+    await Nt.getRanking(10, -1, 1);
+    await Nt.getRanking(10, -1, 2);
+    await Nt.getRanking(10, -1, 3);
+}
+
 tasks.push(
     cron.schedule('*/5 * * * *', () => {
         console.log('caching new manga every 5 minutes');
@@ -33,8 +42,9 @@ tasks.push(
 );
 
 tasks.push(
-    cron.schedule('*/30 * * * * *', () => {
-        console.log('service 3 running every 30 second');
+    cron.schedule('* */12 * * *', () => {
+        console.log('caching ranking manga every 12 hours');
+        cachingRankingManga();
     }),
 );
 
