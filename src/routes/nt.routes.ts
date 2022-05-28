@@ -40,6 +40,11 @@ router
 router.route('/new').get(ntController().getNewManga);
 
 /*
+/nt/new-updated
+*/
+router.route('/new-updated').get(ntController().getNewUpdatedManga);
+
+/*
 /nt/completed
 */
 router.route('/completed').get(ntController().getCompletedManga);
