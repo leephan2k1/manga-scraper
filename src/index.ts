@@ -5,6 +5,7 @@ import cors from 'cors';
 import createError from 'http-errors';
 import route from './routes';
 import logger from 'morgan';
+import tasks from './services/cron.service';
 
 dotenv.config();
 const app = express();
@@ -47,3 +48,5 @@ app.use((err: ErrorType, req: Request, res: Response, next: NextFunction) => {
 app.listen(port, () => {
     console.log(`⚡️[server]: Server is running at ${port}`);
 });
+
+tasks.forEach((task) => task.start());

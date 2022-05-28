@@ -145,24 +145,28 @@ export default class NtModel extends Scraper {
             page,
         };
 
-        console.log('page:: ', page);
-
         const key = `newManga?id=${_genres}${status}${sort}${page}`;
 
-        const resultCache = await cachingClient.get(key);
+        const { data } = await this.client.get(
+            `${this.baseUrl}/tim-truyen${_genres}`,
+            { params: queryParams },
+        );
+        const { window } = new JSDOM(data);
+        const { document } = window;
 
-        if (resultCache === 'null' || !resultCache) {
-            console.log('cache miss');
-            const { data } = await this.client.get(
-                `${this.baseUrl}/tim-truyen${_genres}`,
-                { params: queryParams },
+        const { mangaData, totalPages } = this.parseSource(document);
+
+        //just always storage page 1,2,3. Other pages just caching 3600s
+        if (+page === 1 || +page === 2 || +page === 3) {
+            await cachingClient.set(
+                key,
+                JSON.stringify({
+                    mangaData,
+                    totalPages,
+                }),
             );
-            const { window } = new JSDOM(data);
-            const { document } = window;
-
-            const { mangaData, totalPages } = this.parseSource(document);
-
-            cachingClient.setEx(
+        } else {
+            await cachingClient.setEx(
                 key,
                 DEFAULT_EXPIRED_NEWMANGA_TIME,
                 JSON.stringify({
@@ -170,12 +174,9 @@ export default class NtModel extends Scraper {
                     totalPages,
                 }),
             );
-
-            return { mangaData, totalPages };
-        } else {
-            console.log('cache hit ');
-            return JSON.parse(String(resultCache));
         }
+
+        return { mangaData, totalPages };
     }
 
     public async filtersManga(

@@ -3,6 +3,11 @@ dotenv.config();
 import { Request, Response, NextFunction } from 'express';
 import NtModel from '../models/Nt.model';
 import { MANGA_SORT, MANGA_STATUS } from '../types/nt';
+import Redis from '../libs/Redis';
+
+const redisPort = Number(process.env.REDIS_PORT) || 6379;
+const redisHost = process.env.REDIS_HOST || '127.0.0.1';
+const cachingClient = Redis.Instance(redisPort, redisHost).getRedisClient();
 
 const baseUrl = process.env.NT_SOURCE_URL as string;
 const Nt = NtModel.Instance(baseUrl);
@@ -109,15 +114,40 @@ function ntController() {
         next: NextFunction,
     ) => {
         const { page, genres } = req.query;
+        const _genres = genres !== undefined ? `/${genres}` : '';
 
-        const { mangaData, totalPages } = await Nt.searchParams(
-            -1,
-            15,
-            String(genres),
-            page,
-        );
+        //make sure model same this key:
+        const key = `newManga?id=${_genres}${-1}${15}${
+            page !== undefined ? page : 1
+        }`;
 
-        res.status(200).json({
+        const redisData = await cachingClient.get(key);
+
+        if (!redisData) {
+            const { mangaData, totalPages } = await Nt.searchParams(
+                -1,
+                15,
+                String(genres),
+                page,
+            );
+
+            if (!mangaData.length)
+                return res.status(404).json({ success: false });
+
+            return res.status(200).json({
+                success: true,
+                data: mangaData,
+                totalPages: totalPages,
+                hasPrevPage: Number(page) > 1 ? true : false,
+                hasNextPage: Number(page) < Number(totalPages) ? true : false,
+            });
+        }
+
+        const { mangaData, totalPages } = JSON.parse(String(redisData));
+
+        if (!mangaData.length) return res.status(404).json({ success: false });
+
+        return res.status(200).json({
             success: true,
             data: mangaData,
             totalPages: totalPages,
