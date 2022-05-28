@@ -9,7 +9,7 @@ import tasks from './services/cron.service';
 
 dotenv.config();
 const app = express();
-const port = app.get('port') || 5000;
+const port = process.env.PORT || 5000;
 
 //apply middleware
 app.use(cors());
