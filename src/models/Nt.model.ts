@@ -145,11 +145,13 @@ export default class NtModel extends Scraper {
             page,
         };
 
+        console.log('page:: ', page);
+
         const key = `newManga?id=${_genres}${status}${sort}${page}`;
 
         const resultCache = await cachingClient.get(key);
 
-        if (!resultCache) {
+        if (resultCache === 'null' || !resultCache) {
             console.log('cache miss');
             const { data } = await this.client.get(
                 `${this.baseUrl}/tim-truyen${_genres}`,
@@ -170,10 +172,10 @@ export default class NtModel extends Scraper {
             );
 
             return { mangaData, totalPages };
+        } else {
+            console.log('cache hit ');
+            return JSON.parse(String(resultCache));
         }
-
-        console.log('cache hit');
-        return JSON.parse(resultCache);
     }
 
     public async filtersManga(

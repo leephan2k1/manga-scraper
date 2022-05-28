@@ -114,6 +114,7 @@ function ntController() {
             -1,
             15,
             String(genres),
+            page,
         );
 
         res.status(200).json({
