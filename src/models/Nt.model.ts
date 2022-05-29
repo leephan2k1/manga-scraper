@@ -145,13 +145,20 @@ export default class NtModel extends Scraper {
     }
 
     public async getMangaAuthor(author: string) {
-        const { data } = await this.client.get(`${this.baseUrl}/tim-truyen`, {
-            params: { 'tac-gia': author },
-        });
-        const { window } = new JSDOM(data);
-        const { document } = window;
+        try {
+            const { data } = await this.client.get(
+                `${this.baseUrl}/tim-truyen`,
+                {
+                    params: { 'tac-gia': author },
+                },
+            );
+            const { window } = new JSDOM(data);
+            const { document } = window;
 
-        return this.parseSource(document);
+            return this.parseSource(document);
+        } catch (err) {
+            console.log(err);
+        }
     }
 
     public async searchParams(
@@ -170,23 +177,27 @@ export default class NtModel extends Scraper {
 
         const key = `${KEY_CACHE_NEW_MANGA}${_genres}${status}${sort}${page}`;
 
-        const { data } = await this.client.get(
-            `${this.baseUrl}/tim-truyen${_genres}`,
-            { params: queryParams },
-        );
-        const { window } = new JSDOM(data);
-        const { document } = window;
+        try {
+            const { data } = await this.client.get(
+                `${this.baseUrl}/tim-truyen${_genres}`,
+                { params: queryParams },
+            );
+            const { window } = new JSDOM(data);
+            const { document } = window;
 
-        const { mangaData, totalPages } = this.parseSource(document);
+            const { mangaData, totalPages } = this.parseSource(document);
 
-        await this.cache(
-            key,
-            JSON.stringify({ mangaData, totalPages }),
-            page,
-            DEFAULT_EXPIRED_NEWMANGA_TIME,
-        );
+            await this.cache(
+                key,
+                JSON.stringify({ mangaData, totalPages }),
+                page,
+                DEFAULT_EXPIRED_NEWMANGA_TIME,
+            );
 
-        return { mangaData, totalPages };
+            return { mangaData, totalPages };
+        } catch (err) {
+            console.log(err);
+        }
     }
 
     public async getNewUpdatedManga(page: number = 1) {
@@ -196,22 +207,29 @@ export default class NtModel extends Scraper {
 
         const key = `${KEY_CACHE_NEW_UPDATED_MANGA}${page}`;
 
-        const { data } = await this.client.get(`${this.baseUrl}/tim-truyen`, {
-            params: queryParams,
-        });
-        const { window } = new JSDOM(data);
-        const { document } = window;
+        try {
+            const { data } = await this.client.get(
+                `${this.baseUrl}/tim-truyen`,
+                {
+                    params: queryParams,
+                },
+            );
+            const { window } = new JSDOM(data);
+            const { document } = window;
 
-        const { mangaData, totalPages } = this.parseSource(document);
+            const { mangaData, totalPages } = this.parseSource(document);
 
-        await this.cache(
-            key,
-            JSON.stringify({ mangaData, totalPages }),
-            page,
-            DEFAULT_EXPIRED_NEW_UPDATED_MANGA_TIME,
-        );
+            await this.cache(
+                key,
+                JSON.stringify({ mangaData, totalPages }),
+                page,
+                DEFAULT_EXPIRED_NEW_UPDATED_MANGA_TIME,
+            );
 
-        return { mangaData, totalPages };
+            return { mangaData, totalPages };
+        } catch (error) {
+            console.log(error);
+        }
     }
 
     public async filtersManga(
@@ -235,78 +253,96 @@ export default class NtModel extends Scraper {
         see: https://www.nettruyenco.com/tim-truyen
         */
 
-        const { data } = await this.client.get(
-            `${this.baseUrl}/tim-truyen${_genres}`,
-            { params: queryParams },
-        );
-        const { window } = new JSDOM(data);
-        const { document } = window;
+        try {
+            const { data } = await this.client.get(
+                `${this.baseUrl}/tim-truyen${_genres}`,
+                { params: queryParams },
+            );
+            const { window } = new JSDOM(data);
+            const { document } = window;
 
-        return this.parseSource(document);
+            return this.parseSource(document);
+        } catch (error) {
+            console.log(error);
+        }
     }
 
     public async searchQuery(query: string) {
         const baseUrlSearch = `/Comic/Services/SuggestSearch.ashx`;
-        const { data } = await this.client.get(
-            `${this.baseUrl}${baseUrlSearch}`,
-            { params: { q: query } },
-        );
-        const { window } = new JSDOM(data);
-        const { document } = window;
 
-        const searchResultList = document.querySelectorAll('li');
-        const mangaData = [...searchResultList].map((manga) => {
-            const iTagList = manga.querySelectorAll('h4 i');
-            const newChapter = iTagList[0].innerHTML;
+        try {
+            const { data } = await this.client.get(
+                `${this.baseUrl}${baseUrlSearch}`,
+                { params: { q: query } },
+            );
+            const { window } = new JSDOM(data);
+            const { document } = window;
 
-            const genres = GENRES.filter((genre) => {
-                let flag = false;
+            const searchResultList = document.querySelectorAll('li');
+            const mangaData = [...searchResultList].map((manga) => {
+                const iTagList = manga.querySelectorAll('h4 i');
+                const newChapter = iTagList[0].innerHTML;
 
-                iTagList.forEach((tag) => {
-                    const str = String(tag.innerHTML);
-                    if (isExactMatch(str, genre)) {
-                        flag = true;
-                        return;
-                    }
+                const genres = GENRES.filter((genre) => {
+                    let flag = false;
+
+                    iTagList.forEach((tag) => {
+                        const str = String(tag.innerHTML);
+                        if (isExactMatch(str, genre)) {
+                            flag = true;
+                            return;
+                        }
+                    });
+
+                    if (flag) return genre;
                 });
 
-                if (flag) return genre;
+                const thumbnail = manga
+                    .querySelector('img')
+                    ?.getAttribute('src');
+                const name = manga.querySelector('h3')?.innerHTML;
+                const path = String(
+                    manga.querySelector('a')?.getAttribute('href'),
+                ).trim();
+                const slug = path.substring(path.lastIndexOf('/') + 1);
+
+                return { thumbnail, name, slug, newChapter, genres };
             });
 
-            const thumbnail = manga.querySelector('img')?.getAttribute('src');
-            const name = manga.querySelector('h3')?.innerHTML;
-            const path = String(
-                manga.querySelector('a')?.getAttribute('href'),
-            ).trim();
-            const slug = path.substring(path.lastIndexOf('/') + 1);
+            const totalPages = mangaData.length;
 
-            return { thumbnail, name, slug, newChapter, genres };
-        });
-
-        const totalPages = mangaData.length;
-
-        return { mangaData, totalPages };
+            return { mangaData, totalPages };
+        } catch (err) {
+            console.log(err);
+        }
     }
 
     public async getCompletedManga(page: number = 1) {
         const key = `${KEY_CACHE_COMPLETED_MANGA}${page}`;
 
-        const { data } = await this.client.get(`${this.baseUrl}/truyen-full`, {
-            params: { page: page },
-        });
-        const { window } = new JSDOM(data);
-        const { document } = window;
+        try {
+            const { data } = await this.client.get(
+                `${this.baseUrl}/truyen-full`,
+                {
+                    params: { page: page },
+                },
+            );
+            const { window } = new JSDOM(data);
+            const { document } = window;
 
-        const { mangaData, totalPages } = this.parseSource(document);
+            const { mangaData, totalPages } = this.parseSource(document);
 
-        await this.cache(
-            key,
-            JSON.stringify({ mangaData, totalPages }),
-            page,
-            DEFAULT_EXPIRED_COMPLETED_MANGA_TIME,
-        );
+            await this.cache(
+                key,
+                JSON.stringify({ mangaData, totalPages }),
+                page,
+                DEFAULT_EXPIRED_COMPLETED_MANGA_TIME,
+            );
 
-        return { mangaData, totalPages };
+            return { mangaData, totalPages };
+        } catch (error) {
+            console.log(error);
+        }
     }
 
     public async getRanking(
@@ -326,124 +362,141 @@ export default class NtModel extends Scraper {
 
         // console.log('>>> ', queryParams);
 
-        const { data } = await this.client.get(`${this.baseUrl}/tim-truyen`, {
-            params: queryParams,
-        });
+        try {
+            const { data } = await this.client.get(
+                `${this.baseUrl}/tim-truyen`,
+                {
+                    params: queryParams,
+                },
+            );
 
-        const { window } = new JSDOM(data);
-        const { document } = window;
+            const { window } = new JSDOM(data);
+            const { document } = window;
 
-        const { mangaData, totalPages } = this.parseSource(document);
+            const { mangaData, totalPages } = this.parseSource(document);
 
-        this.cache(
-            key,
-            JSON.stringify({ mangaData, totalPages }),
-            page !== undefined ? page : 1,
-            DEFAULT_EXPIRED_RANKING_MANGA_TIME,
-        );
+            this.cache(
+                key,
+                JSON.stringify({ mangaData, totalPages }),
+                page !== undefined ? page : 1,
+                DEFAULT_EXPIRED_RANKING_MANGA_TIME,
+            );
 
-        return { mangaData, totalPages };
+            return { mangaData, totalPages };
+        } catch (err) {
+            console.log(err);
+        }
     }
 
     public async getMangaDetail(mangaSlug: string) {
         const baseUrlMangaDetail = 'truyen-tranh';
 
-        const { data } = await this.client.get(
-            `${this.baseUrl}/${baseUrlMangaDetail}/${mangaSlug}`,
-        );
-        const { window } = new JSDOM(data);
-        const { document } = window;
-
-        const rootSelector = '#item-detail';
-
-        const title = normalizeString(
-            String(document.querySelector(`${rootSelector} h1`)?.textContent),
-        );
-        const updatedAt = normalizeString(
-            String(document.querySelector(`${rootSelector} time`)?.textContent),
-        );
-        const otherName = normalizeString(
-            String(
-                document.querySelector(
-                    `${rootSelector} .detail-info .other-name`,
-                )?.textContent,
-            ),
-        );
-
-        const author = normalizeString(
-            String(
-                document.querySelectorAll(
-                    `${rootSelector} .detail-info .author p`,
-                )[1].textContent,
-            ),
-        );
-        const status = normalizeString(
-            String(
-                document.querySelectorAll(
-                    `${rootSelector} .detail-info .status p`,
-                )[1].textContent,
-            ),
-        );
-        const genresArrayRaw = document
-            .querySelectorAll(`${rootSelector} .kind p`)[1]
-            .querySelectorAll('a');
-        const genres = [...genresArrayRaw].map((genre) => {
-            const genreTitle = normalizeString(String(genre.textContent));
-            const hrefString = String(genre.getAttribute('href'));
-            const slug = hrefString.substring(hrefString.lastIndexOf('/') + 1);
-
-            return { genreTitle, slug };
-        });
-
-        const lastChildUl = document.querySelectorAll(
-            `${rootSelector} .detail-info .list-info .row`,
-        );
-        const view = normalizeString(
-            String(
-                lastChildUl[lastChildUl.length - 1].querySelectorAll('p')[1]
-                    .textContent,
-            ),
-        );
-        const review = normalizeString(
-            String(
-                document.querySelector(`${rootSelector} .detail-content p`)
-                    ?.textContent,
-            ),
-        );
-
-        const chapterListRaw = document.querySelectorAll(
-            `${rootSelector} #nt_listchapter ul .row`,
-        );
-        const chapterList = [...chapterListRaw].map((chapter) => {
-            const chapterTitle = normalizeString(
-                String(chapter.querySelector('a')?.textContent),
+        try {
+            const { data } = await this.client.get(
+                `${this.baseUrl}/${baseUrlMangaDetail}/${mangaSlug}`,
             );
-            const chapterId = chapter
-                .querySelector('a')
-                ?.getAttribute('data-id');
+            const { window } = new JSDOM(data);
+            const { document } = window;
 
+            const rootSelector = '#item-detail';
+
+            const title = normalizeString(
+                String(
+                    document.querySelector(`${rootSelector} h1`)?.textContent,
+                ),
+            );
             const updatedAt = normalizeString(
-                String(chapter.querySelectorAll('div')[1].textContent),
+                String(
+                    document.querySelector(`${rootSelector} time`)?.textContent,
+                ),
+            );
+            const otherName = normalizeString(
+                String(
+                    document.querySelector(
+                        `${rootSelector} .detail-info .other-name`,
+                    )?.textContent,
+                ),
             );
 
+            const author = normalizeString(
+                String(
+                    document.querySelectorAll(
+                        `${rootSelector} .detail-info .author p`,
+                    )[1].textContent,
+                ),
+            );
+            const status = normalizeString(
+                String(
+                    document.querySelectorAll(
+                        `${rootSelector} .detail-info .status p`,
+                    )[1].textContent,
+                ),
+            );
+            const genresArrayRaw = document
+                .querySelectorAll(`${rootSelector} .kind p`)[1]
+                .querySelectorAll('a');
+            const genres = [...genresArrayRaw].map((genre) => {
+                const genreTitle = normalizeString(String(genre.textContent));
+                const hrefString = String(genre.getAttribute('href'));
+                const slug = hrefString.substring(
+                    hrefString.lastIndexOf('/') + 1,
+                );
+
+                return { genreTitle, slug };
+            });
+
+            const lastChildUl = document.querySelectorAll(
+                `${rootSelector} .detail-info .list-info .row`,
+            );
             const view = normalizeString(
-                String(chapter.querySelectorAll('div')[2].textContent),
+                String(
+                    lastChildUl[lastChildUl.length - 1].querySelectorAll('p')[1]
+                        .textContent,
+                ),
+            );
+            const review = normalizeString(
+                String(
+                    document.querySelector(`${rootSelector} .detail-content p`)
+                        ?.textContent,
+                ),
             );
 
-            return { chapterId, chapterTitle, updatedAt, view };
-        });
+            const chapterListRaw = document.querySelectorAll(
+                `${rootSelector} #nt_listchapter ul .row`,
+            );
+            const chapterList = [...chapterListRaw].map((chapter) => {
+                const chapterTitle = normalizeString(
+                    String(chapter.querySelector('a')?.textContent),
+                );
+                const chapterId = chapter
+                    .querySelector('a')
+                    ?.getAttribute('data-id');
 
-        return {
-            title,
-            updatedAt,
-            otherName,
-            author,
-            status,
-            genres,
-            view,
-            review,
-            chapterList,
-        };
+                const updatedAt = normalizeString(
+                    String(chapter.querySelectorAll('div')[1].textContent),
+                );
+
+                const view = normalizeString(
+                    String(chapter.querySelectorAll('div')[2].textContent),
+                );
+
+                return { chapterId, chapterTitle, updatedAt, view };
+            });
+
+            return {
+                title,
+                updatedAt,
+                otherName,
+                author,
+                status,
+                genres,
+                view,
+                review,
+                chapterList,
+            };
+        } catch (error) {
+            console.log(error);
+        }
     }
 
     public async getChapterSrc(
@@ -451,38 +504,42 @@ export default class NtModel extends Scraper {
         chapter: number,
         chapterId: string,
     ) {
-        const { data } = await this.client.get(
-            `${this.baseUrl}/truyen-tranh/${mangaSlug}/chap-${chapter}/${chapterId}`,
-        );
-        const { window } = new JSDOM(data);
-        const { document } = window;
-        const protocols = ['http', 'https'];
+        try {
+            const { data } = await this.client.get(
+                `${this.baseUrl}/truyen-tranh/${mangaSlug}/chap-${chapter}/${chapterId}`,
+            );
+            const { window } = new JSDOM(data);
+            const { document } = window;
+            const protocols = ['http', 'https'];
 
-        const pagesRaw = document.querySelectorAll(
-            '.reading-detail .page-chapter',
-        );
+            const pagesRaw = document.querySelectorAll(
+                '.reading-detail .page-chapter',
+            );
 
-        const pages = [...pagesRaw].map((page) => {
-            const id = page.querySelector('img')?.dataset.index;
+            const pages = [...pagesRaw].map((page) => {
+                const id = page.querySelector('img')?.dataset.index;
 
-            const source = page.querySelector('img')?.dataset.original;
-            const srcCDN = page.querySelector('img')?.dataset.cdn;
+                const source = page.querySelector('img')?.dataset.original;
+                const srcCDN = page.querySelector('img')?.dataset.cdn;
 
-            const imgSrc = protocols.some((protocol) =>
-                source?.includes(protocol),
-            )
-                ? source
-                : `https:${source}`;
-            const imgSrcCDN = protocols.some((protocol) =>
-                srcCDN?.includes(protocol),
-            )
-                ? srcCDN
-                : `https:${srcCDN}`;
+                const imgSrc = protocols.some((protocol) =>
+                    source?.includes(protocol),
+                )
+                    ? source
+                    : `https:${source}`;
+                const imgSrcCDN = protocols.some((protocol) =>
+                    srcCDN?.includes(protocol),
+                )
+                    ? srcCDN
+                    : `https:${srcCDN}`;
 
-            return { id, imgSrc, imgSrcCDN };
-        });
+                return { id, imgSrc, imgSrcCDN };
+            });
 
-        return pages;
+            return pages;
+        } catch (err) {
+            console.log(err);
+        }
     }
 
     // public async testModel() {
