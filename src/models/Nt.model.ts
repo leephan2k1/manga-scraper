@@ -158,6 +158,7 @@ export default class NtModel extends Scraper {
             return this.parseSource(document);
         } catch (err) {
             console.log(err);
+            return { mangaData: [], totalPages: 0 };
         }
     }
 
@@ -197,6 +198,7 @@ export default class NtModel extends Scraper {
             return { mangaData, totalPages };
         } catch (err) {
             console.log(err);
+            return { mangaData: [], totalPages: 0 };
         }
     }
 
@@ -229,6 +231,7 @@ export default class NtModel extends Scraper {
             return { mangaData, totalPages };
         } catch (error) {
             console.log(error);
+            return { mangaData: [], totalPages: 0 };
         }
     }
 
@@ -264,6 +267,7 @@ export default class NtModel extends Scraper {
             return this.parseSource(document);
         } catch (error) {
             console.log(error);
+            return { mangaData: [], totalPages: 0 };
         }
     }
 
@@ -314,6 +318,7 @@ export default class NtModel extends Scraper {
             return { mangaData, totalPages };
         } catch (err) {
             console.log(err);
+            return { mangaData: [], totalPages: 0 };
         }
     }
 
@@ -342,6 +347,7 @@ export default class NtModel extends Scraper {
             return { mangaData, totalPages };
         } catch (error) {
             console.log(error);
+            return { mangaData: [], totalPages: 0 };
         }
     }
 
@@ -385,6 +391,7 @@ export default class NtModel extends Scraper {
             return { mangaData, totalPages };
         } catch (err) {
             console.log(err);
+            return { mangaData: [], totalPages: 0 };
         }
     }
 
@@ -496,6 +503,17 @@ export default class NtModel extends Scraper {
             };
         } catch (error) {
             console.log(error);
+            return {
+                title: '',
+                updatedAt: '',
+                otherName: '',
+                author: '',
+                status: '',
+                genres: '',
+                view: '',
+                review: '',
+                chapterList: '',
+            };
         }
     }
 
@@ -539,6 +557,7 @@ export default class NtModel extends Scraper {
             return pages;
         } catch (err) {
             console.log(err);
+            return null;
         }
     }
 

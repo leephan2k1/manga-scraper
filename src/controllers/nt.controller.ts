@@ -331,6 +331,8 @@ function ntController() {
             chapterList,
         } = await Nt.getMangaDetail(String(mangaSlug));
 
+        if (!title.length) return res.status(404).json({ sucess: false });
+
         res.status(200).json({
             success: true,
             data: {
@@ -359,6 +361,8 @@ function ntController() {
             Number(chapter),
             String(chapterId),
         );
+
+        if (!chapterSrc) return res.status(404).json({ success: false });
 
         res.json({
             success: true,
