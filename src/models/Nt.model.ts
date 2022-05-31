@@ -1,24 +1,19 @@
-import dotenv from 'dotenv';
-dotenv.config();
-import Scraper from '../libs/Scraper';
-import { JSDOM } from 'jsdom';
 import { AxiosRequestConfig } from 'axios';
+import dotenv from 'dotenv';
+import { JSDOM } from 'jsdom';
+
+import {
+    DEFAULT_EXPIRED_COMPLETED_MANGA_TIME, DEFAULT_EXPIRED_NEW_UPDATED_MANGA_TIME,
+    DEFAULT_EXPIRED_NEWMANGA_TIME, DEFAULT_EXPIRED_RANKING_MANGA_TIME, KEY_CACHE_COMPLETED_MANGA,
+    KEY_CACHE_NEW_MANGA, KEY_CACHE_NEW_UPDATED_MANGA, KEY_CACHE_RANKING_MANGA
+} from '../constants/nt';
+import Redis from '../libs/Redis';
+import Scraper from '../libs/Scraper';
+import { GENRES } from '../types/genres';
 import { NtDataList } from '../types/nt';
 import { isExactMatch, normalizeString } from '../utils/stringHandler';
-import { GENRES } from '../types/genres';
-import {
-    DEFAULT_EXPIRED_NEWMANGA_TIME,
-    DEFAULT_EXPIRED_COMPLETED_MANGA_TIME,
-    DEFAULT_EXPIRED_RANKING_MANGA_TIME,
-    DEFAULT_EXPIRED_NEW_UPDATED_MANGA_TIME,
-    KEY_CACHE_COMPLETED_MANGA,
-    KEY_CACHE_NEW_MANGA,
-    KEY_CACHE_RANKING_MANGA,
-    KEY_CACHE_NEW_UPDATED_MANGA,
-} from '../constants/nt';
 
-import Redis from '../libs/Redis';
-
+dotenv.config();
 const redisPort = Number(process.env.REDIS_PORT) || 6379;
 const redisHost = process.env.REDIS_HOST || '127.0.0.1';
 
@@ -282,6 +277,8 @@ export default class NtModel extends Scraper {
             const { window } = new JSDOM(data);
             const { document } = window;
 
+            const protocols = ['http', 'https'];
+
             const searchResultList = document.querySelectorAll('li');
             const mangaData = [...searchResultList].map((manga) => {
                 const iTagList = manga.querySelectorAll('h4 i');
@@ -301,9 +298,19 @@ export default class NtModel extends Scraper {
                     if (flag) return genre;
                 });
 
-                const thumbnail = manga
+                // const thumbnail = manga
+                //     .querySelector('img')
+                //     ?.getAttribute('src');
+                const rawThumbnail = manga
                     .querySelector('img')
                     ?.getAttribute('src');
+
+                const thumbnail = protocols.some((protocol) =>
+                    String(rawThumbnail).includes(protocol),
+                )
+                    ? String(rawThumbnail)
+                    : `https:${String(rawThumbnail)}`;
+
                 const name = manga.querySelector('h3')?.innerHTML;
                 const path = String(
                     manga.querySelector('a')?.getAttribute('href'),
