@@ -52,7 +52,9 @@ export default class NtModel extends Scraper {
         const mangaList = document.querySelectorAll('.ModuleContent .item');
 
         const mangaData = [...mangaList].map((manga) => {
-            const thumbnail = manga.querySelector('img')?.getAttribute('src');
+            const thumbnail = this.unshiftProtocol(
+                String(manga.querySelector('img')?.getAttribute('src')),
+            );
             const newChapter = manga.querySelector('ul > li > a')?.innerHTML;
             const updatedAt = manga.querySelector('ul > li > i')?.innerHTML;
             const view = manga.querySelector('pull-left > i')?.innerHTML;
@@ -123,6 +125,14 @@ export default class NtModel extends Scraper {
         );
 
         return { mangaData, totalPages };
+    }
+
+    private unshiftProtocol(urlSrc: string) {
+        const protocols = ['http', 'https'];
+
+        return protocols.some((protocol) => urlSrc.includes(protocol))
+            ? urlSrc
+            : `https:${urlSrc}`;
     }
 
     private async cache(
