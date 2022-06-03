@@ -53,7 +53,8 @@ export default class NtModel extends Scraper {
 
         const mangaData = [...mangaList].map((manga) => {
             const thumbnail = this.unshiftProtocol(
-                String(manga.querySelector('img')?.getAttribute('src')),
+                String(manga.querySelector('img')?.dataset.original) ||
+                    String(manga.querySelector('img')?.getAttribute('src')),
             );
             const newChapter = manga.querySelector('ul > li > a')?.innerHTML;
             const updatedAt = manga.querySelector('ul > li > i')?.innerHTML;
