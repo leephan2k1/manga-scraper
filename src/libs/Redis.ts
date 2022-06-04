@@ -3,19 +3,25 @@ import { createClient, RedisClientType } from 'redis';
 export default class Redis {
     port: number;
     host: string;
+    username: string;
+    password: string;
     client: RedisClientType;
 
     private static instance: Redis;
 
-    private constructor(port: number, host: string) {
+    private constructor(
+        port: number,
+        host: string,
+        username: string,
+        password: string,
+    ) {
         this.port = port;
         this.host = host;
+        this.username = username;
+        this.password = password;
 
         this.client = createClient({
-            socket: {
-                port: this.port,
-                host: this.host,
-            },
+            url: `redis://${this.username}:${this.password}@${this.host}:${this.port}`,
         });
 
         this.client.on('error', (err) =>
@@ -33,9 +39,14 @@ export default class Redis {
         }
     }
 
-    public static Instance(port: number, host: string) {
+    public static Instance(
+        port: number,
+        host: string,
+        username: string,
+        password: string,
+    ) {
         if (!this.instance) {
-            this.instance = new this(port, host);
+            this.instance = new this(port, host, username, password);
         }
 
         return this.instance;

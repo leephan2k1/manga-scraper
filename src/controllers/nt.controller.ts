@@ -1,19 +1,26 @@
 import dotenv from 'dotenv';
-dotenv.config();
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
+
+import {
+    KEY_CACHE_COMPLETED_MANGA, KEY_CACHE_NEW_MANGA, KEY_CACHE_NEW_UPDATED_MANGA,
+    KEY_CACHE_RANKING_MANGA
+} from '../constants/nt';
+import Redis from '../libs/Redis';
 import NtModel from '../models/Nt.model';
 import { MANGA_SORT, MANGA_STATUS } from '../types/nt';
-import Redis from '../libs/Redis';
-import {
-    KEY_CACHE_COMPLETED_MANGA,
-    KEY_CACHE_NEW_MANGA,
-    KEY_CACHE_RANKING_MANGA,
-    KEY_CACHE_NEW_UPDATED_MANGA,
-} from '../constants/nt';
 
+dotenv.config();
 const redisPort = Number(process.env.REDIS_PORT) || 6379;
 const redisHost = process.env.REDIS_HOST || '127.0.0.1';
-const cachingClient = Redis.Instance(redisPort, redisHost).getRedisClient();
+const redisUsername = String(process.env.REDIS_USER_NAME) || 'default';
+const redisPassword = String(process.env.REDIS_PASSWORD) || '';
+
+const cachingClient = Redis.Instance(
+    redisPort,
+    redisHost,
+    redisUsername,
+    redisPassword,
+).getRedisClient();
 
 const baseUrl = process.env.NT_SOURCE_URL as string;
 const Nt = NtModel.Instance(baseUrl);

@@ -16,8 +16,15 @@ import { isExactMatch, normalizeString } from '../utils/stringHandler';
 dotenv.config();
 const redisPort = Number(process.env.REDIS_PORT) || 6379;
 const redisHost = process.env.REDIS_HOST || '127.0.0.1';
+const redisUsername = String(process.env.REDIS_USER_NAME) || 'default';
+const redisPassword = String(process.env.REDIS_PASSWORD) || '';
 
-const cachingClient = Redis.Instance(redisPort, redisHost).getRedisClient();
+const cachingClient = Redis.Instance(
+    redisPort,
+    redisHost,
+    redisUsername,
+    redisPassword,
+).getRedisClient();
 
 interface QueryParams {
     sort?: number;

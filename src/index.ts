@@ -1,15 +1,17 @@
-import express, { Request, Response, NextFunction } from 'express';
-import { ErrorType } from '@/types/http';
-import dotenv from 'dotenv';
 import cors from 'cors';
+import dotenv from 'dotenv';
+import express, { NextFunction, Request, Response } from 'express';
 import createError from 'http-errors';
-import route from './routes';
 import logger from 'morgan';
+
+import { ErrorType } from '@/types/http';
+
+import route from './routes';
 import tasks from './services/cron.service';
 
 dotenv.config();
 const app = express();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 5001;
 
 //apply middleware
 app.use(cors());
