@@ -1,6 +1,8 @@
 import dotenv from 'dotenv';
 import { NextFunction, Request, Response } from 'express';
 
+import { GENRES_NT } from '../types/nt';
+
 import {
     KEY_CACHE_COMPLETED_MANGA,
     KEY_CACHE_NEW_MANGA,
@@ -32,6 +34,7 @@ interface RankingQuery {
     top: 'all' | 'month' | 'week' | 'day' | 'chapter' | undefined;
     page?: number;
     status?: 'all' | 'completed' | 'ongoing' | undefined;
+    genres?: GENRES_NT;
 }
 
 interface SearchQuery extends Pick<RankingQuery, 'page'> {
@@ -47,9 +50,7 @@ interface NewMangaQuery extends Pick<RankingQuery, 'page'> {
     genres: string;
 }
 
-interface FiltersManga extends Partial<RankingQuery> {
-    genres?: string;
-}
+interface FiltersManga extends Partial<RankingQuery> {}
 
 interface MangaParams {
     mangaSlug: string;
@@ -264,23 +265,22 @@ function ntController() {
         res: Response,
         next: NextFunction,
     ) => {
-        const { top, page, status } = req.query;
+        const { top, page, status, genres } = req.query;
 
         //nettruyen config: https://www.nettruyenco.com/tim-truyen?status=-1&sort=10
 
-        const key = `${KEY_CACHE_RANKING_MANGA}${
-            page !== undefined ? page : ''
-        }${top !== undefined ? MANGA_SORT[top] : 10}${
-            status !== undefined ? MANGA_STATUS[status] : -1
-        }`;
+        const key = `${KEY_CACHE_RANKING_MANGA}${page ? page : ''}${
+            top ? MANGA_SORT[top] : 10
+        }${status ? MANGA_STATUS[status] : -1}${genres ? genres : ''}`;
 
         const redisData = await cachingClient.get(key);
 
         if (!redisData) {
             const { mangaData, totalPages } = await Nt.getRanking(
-                top !== undefined ? MANGA_SORT[top] : 10,
-                status !== undefined ? MANGA_STATUS[status] : -1,
-                page !== undefined ? page : undefined,
+                top ? MANGA_SORT[top] : 10,
+                status ? MANGA_STATUS[status] : -1,
+                page ? page : undefined,
+                genres ? genres : '',
             );
 
             if (!mangaData.length) {
