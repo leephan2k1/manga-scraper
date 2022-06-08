@@ -3,9 +3,14 @@ import dotenv from 'dotenv';
 import { JSDOM } from 'jsdom';
 
 import {
-    DEFAULT_EXPIRED_COMPLETED_MANGA_TIME, DEFAULT_EXPIRED_NEW_UPDATED_MANGA_TIME,
-    DEFAULT_EXPIRED_NEWMANGA_TIME, DEFAULT_EXPIRED_RANKING_MANGA_TIME, KEY_CACHE_COMPLETED_MANGA,
-    KEY_CACHE_NEW_MANGA, KEY_CACHE_NEW_UPDATED_MANGA, KEY_CACHE_RANKING_MANGA
+    DEFAULT_EXPIRED_COMPLETED_MANGA_TIME,
+    DEFAULT_EXPIRED_NEW_UPDATED_MANGA_TIME,
+    DEFAULT_EXPIRED_NEWMANGA_TIME,
+    DEFAULT_EXPIRED_RANKING_MANGA_TIME,
+    KEY_CACHE_COMPLETED_MANGA,
+    KEY_CACHE_NEW_MANGA,
+    KEY_CACHE_NEW_UPDATED_MANGA,
+    KEY_CACHE_RANKING_MANGA,
 } from '../constants/nt';
 import Redis from '../libs/Redis';
 import Scraper from '../libs/Scraper';
@@ -437,6 +442,7 @@ export default class NtModel extends Scraper {
                     document.querySelector(`${rootSelector} h1`)?.textContent,
                 ),
             );
+
             const updatedAt = normalizeString(
                 String(
                     document.querySelector(`${rootSelector} time`)?.textContent,
@@ -457,6 +463,7 @@ export default class NtModel extends Scraper {
                     )[1].textContent,
                 ),
             );
+
             const status = normalizeString(
                 String(
                     document.querySelectorAll(
@@ -464,6 +471,7 @@ export default class NtModel extends Scraper {
                     )[1].textContent,
                 ),
             );
+
             const genresArrayRaw = document
                 .querySelectorAll(`${rootSelector} .kind p`)[1]
                 .querySelectorAll('a');
@@ -515,9 +523,18 @@ export default class NtModel extends Scraper {
                 return { chapterId, chapterTitle, updatedAt, view };
             });
 
+            const thumbnail = this.unshiftProtocol(
+                String(
+                    document
+                        .querySelector(`${rootSelector} .col-image img`)
+                        ?.getAttribute('src'),
+                ),
+            );
+
             return {
                 title,
                 updatedAt,
+                thumbnail,
                 otherName,
                 author,
                 status,
@@ -527,7 +544,7 @@ export default class NtModel extends Scraper {
                 chapterList,
             };
         } catch (error) {
-            console.log(error);
+            // console.log(error);
             return {
                 title: '',
                 updatedAt: '',
