@@ -11,6 +11,7 @@ import {
     KEY_CACHE_NEW_MANGA,
     KEY_CACHE_NEW_UPDATED_MANGA,
     KEY_CACHE_RANKING_MANGA,
+    KEY_CACHE_FILTERS_MANGA,
 } from '../constants/nt';
 import Redis from '../libs/Redis';
 import Scraper from '../libs/Scraper';
@@ -262,17 +263,21 @@ export default class NtModel extends Scraper {
         const _genres = genres !== null ? `/${genres}` : '';
 
         const queryParams: QueryParams = {};
-
-        if (sort) queryParams.sort = sort;
-        if (status) queryParams.status = status;
-        if (page) queryParams.page = page;
-
-        // console.log('>>> ', queryParams);
-
         /*
         if all are null, default status: 'all', sort: 'new'
         see: https://www.nettruyenco.com/tim-truyen
         */
+        if (sort) queryParams.sort = sort;
+        if (status) queryParams.status = status;
+        if (page) queryParams.page = page;
+
+        let key: string = '';
+
+        if (genres === 'manga-112' && sort) {
+            key = `${KEY_CACHE_FILTERS_MANGA}${
+                page !== undefined ? page : 1
+            }${genres}${sort}`;
+        }
 
         try {
             const { data } = await this.client.get(
@@ -282,7 +287,16 @@ export default class NtModel extends Scraper {
             const { window } = new JSDOM(data);
             const { document } = window;
 
-            return this.parseSource(document);
+            const { mangaData, totalPages } = this.parseSource(document);
+
+            await this.cache(
+                key,
+                JSON.stringify({ mangaData, totalPages }),
+                page ? page : 1,
+                DEFAULT_EXPIRED_NEW_UPDATED_MANGA_TIME,
+            );
+
+            return { mangaData, totalPages };
         } catch (error) {
             console.log(error);
             return { mangaData: [], totalPages: 0 };

@@ -6,6 +6,7 @@ import {
     KEY_CACHE_NEW_MANGA,
     KEY_CACHE_NEW_UPDATED_MANGA,
     KEY_CACHE_RANKING_MANGA,
+    KEY_CACHE_FILTERS_MANGA,
 } from '../constants/nt';
 import Redis from '../libs/Redis';
 import NtModel from '../models/Nt.model';
@@ -121,22 +122,46 @@ function ntController() {
         next: NextFunction,
     ) => {
         const { page, genres, top, status } = req.query;
+        let key: string = '';
 
-        const { mangaData, totalPages } = await Nt.filtersManga(
-            genres !== undefined ? genres : null,
-            page !== undefined ? page : null,
-            top !== undefined ? MANGA_SORT[top] : null,
-            status !== undefined ? MANGA_STATUS[status] : -1,
-        );
-
-        if (!mangaData.length) {
-            return res.status(404).json({ success: false });
+        //cache data for home page:::
+        if (genres === 'manga-112' && top) {
+            key = `${KEY_CACHE_FILTERS_MANGA}${
+                page !== undefined ? page : 1
+            }${genres}${MANGA_SORT[top]}`;
         }
+
+        const redisData = await cachingClient.get(key);
+
+        if (!redisData) {
+            const { mangaData, totalPages } = await Nt.filtersManga(
+                genres !== undefined ? genres : null,
+                page !== undefined ? page : null,
+                top !== undefined ? MANGA_SORT[top] : null,
+                status !== undefined ? MANGA_STATUS[status] : -1,
+            );
+
+            if (!mangaData.length) {
+                return res.status(404).json({ success: false });
+            }
+
+            return res.status(200).json({
+                success: true,
+                data: mangaData,
+                totalPages,
+                hasPrevPage: Number(page) > 1 ? true : false,
+                hasNextPage: Number(page) < Number(totalPages) ? true : false,
+            });
+        }
+
+        const { mangaData, totalPages } = JSON.parse(String(redisData));
+
+        if (!mangaData.length) return res.status(404).json({ success: false });
 
         return res.status(200).json({
             success: true,
             data: mangaData,
-            totalPages,
+            totalPages: totalPages,
             hasPrevPage: Number(page) > 1 ? true : false,
             hasNextPage: Number(page) < Number(totalPages) ? true : false,
         });

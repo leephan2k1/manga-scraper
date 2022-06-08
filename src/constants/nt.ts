@@ -6,3 +6,4 @@ export const KEY_CACHE_COMPLETED_MANGA = 'completedManga?id=';
 export const KEY_CACHE_NEW_MANGA = 'newManga?id=';
 export const KEY_CACHE_RANKING_MANGA = 'rankingManga?id=';
 export const KEY_CACHE_NEW_UPDATED_MANGA = 'newUpdatedManga?id=';
+export const KEY_CACHE_FILTERS_MANGA = 'mangaIsFiltered?id=';
