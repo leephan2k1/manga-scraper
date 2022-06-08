@@ -19,12 +19,15 @@ async function cachingCompletedManga() {
 }
 
 async function cachingRankingManga() {
-    //cache page 1,2,3
     //default: https://www.nettruyenco.com/tim-truyen?status=-1&sort=10&page=1
-    //genres: all, sort: all, page = this page
-    await Nt.getRanking(10, -1, 1);
-    await Nt.getRanking(10, -1, 2);
-    await Nt.getRanking(10, -1, 3);
+    //cache page 1
+    //genres: manga-112
+    //sort: all, month, week, day
+    //page = this page
+    await Nt.getRanking(10, -1, 1, 'manga-112');
+    await Nt.getRanking(11, -1, 1, 'manga-112');
+    await Nt.getRanking(12, -1, 1, 'manga-112');
+    await Nt.getRanking(13, -1, 1, 'manga-112');
 }
 
 async function cachingNewUpdatedManga() {

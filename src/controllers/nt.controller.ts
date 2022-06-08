@@ -1,11 +1,14 @@
 import dotenv from 'dotenv';
 import { NextFunction, Request, Response } from 'express';
 
+import { GENRES_NT } from '../types/nt';
+
 import {
     KEY_CACHE_COMPLETED_MANGA,
     KEY_CACHE_NEW_MANGA,
     KEY_CACHE_NEW_UPDATED_MANGA,
     KEY_CACHE_RANKING_MANGA,
+    KEY_CACHE_FILTERS_MANGA,
 } from '../constants/nt';
 import Redis from '../libs/Redis';
 import NtModel from '../models/Nt.model';
@@ -31,6 +34,7 @@ interface RankingQuery {
     top: 'all' | 'month' | 'week' | 'day' | 'chapter' | undefined;
     page?: number;
     status?: 'all' | 'completed' | 'ongoing' | undefined;
+    genres?: GENRES_NT;
 }
 
 interface SearchQuery extends Pick<RankingQuery, 'page'> {
@@ -46,9 +50,7 @@ interface NewMangaQuery extends Pick<RankingQuery, 'page'> {
     genres: string;
 }
 
-interface FiltersManga extends Partial<RankingQuery> {
-    genres?: string;
-}
+interface FiltersManga extends Partial<RankingQuery> {}
 
 interface MangaParams {
     mangaSlug: string;
@@ -121,22 +123,46 @@ function ntController() {
         next: NextFunction,
     ) => {
         const { page, genres, top, status } = req.query;
+        let key: string = '';
 
-        const { mangaData, totalPages } = await Nt.filtersManga(
-            genres !== undefined ? genres : null,
-            page !== undefined ? page : null,
-            top !== undefined ? MANGA_SORT[top] : null,
-            status !== undefined ? MANGA_STATUS[status] : -1,
-        );
-
-        if (!mangaData.length) {
-            return res.status(404).json({ success: false });
+        //cache data for home page:::
+        if (genres === 'manga-112' && top) {
+            key = `${KEY_CACHE_FILTERS_MANGA}${
+                page !== undefined ? page : 1
+            }${genres}${MANGA_SORT[top]}`;
         }
+
+        const redisData = await cachingClient.get(key);
+
+        if (!redisData) {
+            const { mangaData, totalPages } = await Nt.filtersManga(
+                genres !== undefined ? genres : null,
+                page !== undefined ? page : null,
+                top !== undefined ? MANGA_SORT[top] : null,
+                status !== undefined ? MANGA_STATUS[status] : -1,
+            );
+
+            if (!mangaData.length) {
+                return res.status(404).json({ success: false });
+            }
+
+            return res.status(200).json({
+                success: true,
+                data: mangaData,
+                totalPages,
+                hasPrevPage: Number(page) > 1 ? true : false,
+                hasNextPage: Number(page) < Number(totalPages) ? true : false,
+            });
+        }
+
+        const { mangaData, totalPages } = JSON.parse(String(redisData));
+
+        if (!mangaData.length) return res.status(404).json({ success: false });
 
         return res.status(200).json({
             success: true,
             data: mangaData,
-            totalPages,
+            totalPages: totalPages,
             hasPrevPage: Number(page) > 1 ? true : false,
             hasNextPage: Number(page) < Number(totalPages) ? true : false,
         });
@@ -239,23 +265,22 @@ function ntController() {
         res: Response,
         next: NextFunction,
     ) => {
-        const { top, page, status } = req.query;
+        const { top, page, status, genres } = req.query;
 
         //nettruyen config: https://www.nettruyenco.com/tim-truyen?status=-1&sort=10
 
-        const key = `${KEY_CACHE_RANKING_MANGA}${
-            page !== undefined ? page : ''
-        }${top !== undefined ? MANGA_SORT[top] : 10}${
-            status !== undefined ? MANGA_STATUS[status] : -1
-        }`;
+        const key = `${KEY_CACHE_RANKING_MANGA}${page ? page : ''}${
+            top ? MANGA_SORT[top] : 10
+        }${status ? MANGA_STATUS[status] : -1}${genres ? genres : ''}`;
 
         const redisData = await cachingClient.get(key);
 
         if (!redisData) {
             const { mangaData, totalPages } = await Nt.getRanking(
-                top !== undefined ? MANGA_SORT[top] : 10,
-                status !== undefined ? MANGA_STATUS[status] : -1,
-                page !== undefined ? page : undefined,
+                top ? MANGA_SORT[top] : 10,
+                status ? MANGA_STATUS[status] : -1,
+                page ? page : undefined,
+                genres ? genres : '',
             );
 
             if (!mangaData.length) {
