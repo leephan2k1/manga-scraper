@@ -2,8 +2,10 @@ import dotenv from 'dotenv';
 import { NextFunction, Request, Response } from 'express';
 
 import {
-    KEY_CACHE_COMPLETED_MANGA, KEY_CACHE_NEW_MANGA, KEY_CACHE_NEW_UPDATED_MANGA,
-    KEY_CACHE_RANKING_MANGA
+    KEY_CACHE_COMPLETED_MANGA,
+    KEY_CACHE_NEW_MANGA,
+    KEY_CACHE_NEW_UPDATED_MANGA,
+    KEY_CACHE_RANKING_MANGA,
 } from '../constants/nt';
 import Redis from '../libs/Redis';
 import NtModel from '../models/Nt.model';
@@ -329,6 +331,7 @@ function ntController() {
         const {
             title,
             updatedAt,
+            thumbnail,
             otherName,
             author,
             status,
@@ -338,7 +341,7 @@ function ntController() {
             chapterList,
         } = await Nt.getMangaDetail(String(mangaSlug));
 
-        if (!title.length) return res.status(404).json({ sucess: false });
+        // if (!title.length) return res.status(404).json({ sucess: false });
 
         res.status(200).json({
             success: true,
@@ -346,6 +349,7 @@ function ntController() {
                 title,
                 updatedAt,
                 otherName,
+                thumbnail,
                 author,
                 status,
                 genres,
