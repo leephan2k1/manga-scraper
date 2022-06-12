@@ -24,18 +24,18 @@ export default class Redis {
             url: `redis://${this.username}:${this.password}@${this.host}:${this.port}`,
         });
 
-        this.client.on('error', (err) =>
-            console.log('Redis Client Error', err),
-        );
-
         this.connect();
+
+        this.client.on('error', (err) =>
+            console.log('Redis Client Error >>>>', err),
+        );
     }
 
     private async connect() {
         try {
-            await this.client.connect();
+            this.client.connect();
         } catch (err) {
-            console.log(err);
+            console.log('Connect Error >>>> ', err);
         }
     }
 
