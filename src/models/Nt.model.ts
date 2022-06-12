@@ -1,36 +1,24 @@
 import { AxiosRequestConfig } from 'axios';
-import dotenv from 'dotenv';
 import { JSDOM } from 'jsdom';
 
 import {
+    DEFAULT_EXPIRED_ADVANCED_SEARCH_MANGA,
     DEFAULT_EXPIRED_COMPLETED_MANGA_TIME,
     DEFAULT_EXPIRED_NEW_UPDATED_MANGA_TIME,
     DEFAULT_EXPIRED_NEWMANGA_TIME,
     DEFAULT_EXPIRED_RANKING_MANGA_TIME,
+    KEY_CACHE_ADVANCED_MANGA,
     KEY_CACHE_COMPLETED_MANGA,
     KEY_CACHE_FILTERS_MANGA,
     KEY_CACHE_NEW_MANGA,
     KEY_CACHE_NEW_UPDATED_MANGA,
     KEY_CACHE_RANKING_MANGA,
 } from '../constants/nt';
-import Redis from '../libs/Redis';
 import Scraper from '../libs/Scraper';
+import cache from '../services/cache.service';
 import { GENRES } from '../types/genres';
 import { GENRES_NT, NtDataList } from '../types/nt';
 import { isExactMatch, normalizeString } from '../utils/stringHandler';
-
-dotenv.config();
-const redisPort = Number(process.env.REDIS_PORT) || 6379;
-const redisHost = process.env.REDIS_HOST || '127.0.0.1';
-const redisUsername = String(process.env.REDIS_USER_NAME) || 'default';
-const redisPassword = String(process.env.REDIS_PASSWORD) || '';
-
-const cachingClient = Redis.Instance(
-    redisPort,
-    redisHost,
-    redisUsername,
-    redisPassword,
-).getRedisClient();
 
 interface QueryParams {
     sort?: number;
@@ -132,11 +120,12 @@ export default class NtModel extends Scraper {
         const totalPagesPath = String(
             document.querySelector('.pagination > li')?.innerHTML,
         ).trim();
-        const totalPages = Number(
-            totalPagesPath
-                .substring(totalPagesPath.lastIndexOf('/') + 1)
-                .trim(),
-        );
+        const totalPages =
+            Number(
+                totalPagesPath
+                    .substring(totalPagesPath.lastIndexOf('/') + 1)
+                    .trim(),
+            ) || 1;
 
         return { mangaData, totalPages };
     }
@@ -147,20 +136,6 @@ export default class NtModel extends Scraper {
         return protocols.some((protocol) => urlSrc.includes(protocol))
             ? urlSrc
             : `https:${urlSrc}`;
-    }
-
-    private async cache(
-        key: string,
-        value: string,
-        page: number,
-        expiredTime: number = 60, //60s, just test
-    ) {
-        //just always storage page 1,2,3. Other pages just caching
-        if (page === 1 || page === 2 || page === 3) {
-            await cachingClient.set(key, value);
-        } else {
-            await cachingClient.setEx(key, expiredTime, value);
-        }
     }
 
     public async getMangaAuthor(author: string) {
@@ -207,11 +182,54 @@ export default class NtModel extends Scraper {
 
             const { mangaData, totalPages } = this.parseSource(document);
 
-            await this.cache(
+            await cache(
                 key,
                 JSON.stringify({ mangaData, totalPages }),
                 page,
                 DEFAULT_EXPIRED_NEWMANGA_TIME,
+            );
+
+            return { mangaData, totalPages };
+        } catch (err) {
+            console.log(err);
+            return { mangaData: [], totalPages: 0 };
+        }
+    }
+
+    public async advancedSearch(
+        genres: string,
+        minchapter: number,
+        top: number,
+        page: number,
+        status: number,
+        gender: number,
+    ) {
+        const key = `${KEY_CACHE_ADVANCED_MANGA}${genres}${minchapter}${top}${page}${status}${gender}`;
+
+        try {
+            const { data } = await this.client.get(
+                `${this.baseUrl}/tim-truyen-nang-cao`,
+                {
+                    params: {
+                        genres,
+                        gender,
+                        minchapter,
+                        sort: top,
+                        page,
+                        status,
+                    },
+                },
+            );
+            const { window } = new JSDOM(data);
+            const { document } = window;
+
+            const { mangaData, totalPages } = this.parseSource(document);
+
+            await cache(
+                key,
+                JSON.stringify({ mangaData, totalPages }),
+                page,
+                DEFAULT_EXPIRED_ADVANCED_SEARCH_MANGA,
             );
 
             return { mangaData, totalPages };
@@ -240,7 +258,7 @@ export default class NtModel extends Scraper {
 
             const { mangaData, totalPages } = this.parseSource(document);
 
-            await this.cache(
+            await cache(
                 key,
                 JSON.stringify({ mangaData, totalPages }),
                 page,
@@ -289,7 +307,7 @@ export default class NtModel extends Scraper {
 
             const { mangaData, totalPages } = this.parseSource(document);
 
-            await this.cache(
+            await cache(
                 key,
                 JSON.stringify({ mangaData, totalPages }),
                 page ? page : 1,
@@ -381,7 +399,7 @@ export default class NtModel extends Scraper {
 
             const { mangaData, totalPages } = this.parseSource(document);
 
-            await this.cache(
+            await cache(
                 key,
                 JSON.stringify({ mangaData, totalPages }),
                 page,
@@ -425,7 +443,7 @@ export default class NtModel extends Scraper {
 
             const { mangaData, totalPages } = this.parseSource(document);
 
-            this.cache(
+            cache(
                 key,
                 JSON.stringify({ mangaData, totalPages }),
                 page !== undefined ? page : 1,
@@ -618,19 +636,27 @@ export default class NtModel extends Scraper {
     }
 
     // public async testModel() {
-    //     const { data } = await this.client.get(`${this.baseUrl}/tim-truyen`);
+    //     const { data } = await this.client.get(
+    //         `${this.baseUrl}/tim-truyen-nang-cao`,
+    //     );
     //     const { window } = new JSDOM(data);
     //     const { document } = window;
 
-    //     const aTags = document.querySelectorAll(
-    //         '.box.darkBox.genres .ModuleContent a',
-    //     );
+    //     const form = document.querySelectorAll(
+    //         '.advsearch-form .form-group',
+    //     )[1];
 
-    //     const dataTest = [...aTags].map((a) => {
-    //         const src = a.getAttribute('href');
-    //         return String(src).substring(String(src).lastIndexOf('/') + 1);
-    //     });
+    //     const items = form?.querySelectorAll('.genre-item');
 
-    //     return dataTest;
+    //     if (items) {
+    //         const dataTest = [...items].map((item) => {
+    //             const title = normalizeString(String(item.textContent));
+    //             const id = item.querySelector('span')?.dataset.id;
+
+    //             return { title, id };
+    //         });
+
+    //         return dataTest;
+    //     }
     // }
 }

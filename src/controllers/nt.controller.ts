@@ -1,31 +1,16 @@
-import dotenv from 'dotenv';
 import { NextFunction, Request, Response } from 'express';
 
-import { GENRES_NT } from '../types/nt';
-
 import {
+    KEY_CACHE_ADVANCED_MANGA,
     KEY_CACHE_COMPLETED_MANGA,
+    KEY_CACHE_FILTERS_MANGA,
     KEY_CACHE_NEW_MANGA,
     KEY_CACHE_NEW_UPDATED_MANGA,
     KEY_CACHE_RANKING_MANGA,
-    KEY_CACHE_FILTERS_MANGA,
 } from '../constants/nt';
-import Redis from '../libs/Redis';
 import NtModel from '../models/Nt.model';
-import { MANGA_SORT, MANGA_STATUS } from '../types/nt';
-
-dotenv.config();
-const redisPort = Number(process.env.REDIS_PORT) || 6379;
-const redisHost = process.env.REDIS_HOST || '127.0.0.1';
-const redisUsername = String(process.env.REDIS_USER_NAME) || 'default';
-const redisPassword = String(process.env.REDIS_PASSWORD) || '';
-
-const cachingClient = Redis.Instance(
-    redisPort,
-    redisHost,
-    redisUsername,
-    redisPassword,
-).getRedisClient();
+import { cachingClient } from '../services/cache.service';
+import { GENRES_NT, MANGA_SORT, MANGA_STATUS } from '../types/nt';
 
 const baseUrl = process.env.NT_SOURCE_URL as string;
 const Nt = NtModel.Instance(baseUrl);
@@ -40,6 +25,13 @@ interface RankingQuery {
 interface SearchQuery extends Pick<RankingQuery, 'page'> {
     q: string;
     limit?: number;
+}
+
+interface AdvancedSearchQuery
+    extends Pick<RankingQuery, 'top' | 'page' | 'status'> {
+    minchapter: number;
+    genres: string;
+    gender: number;
 }
 
 interface AuthorQuery {
@@ -73,6 +65,60 @@ function ntController() {
     //         data: dataTest,
     //     });
     // };
+
+    const advancedSearch = async (
+        req: Request<{}, {}, {}, AdvancedSearchQuery>,
+        res: Response,
+        next: NextFunction,
+    ) => {
+        const { genres, minchapter, top, page, status, gender } = req.query;
+
+        const _genres = genres ? genres : '';
+        const _gender = gender ? gender : -1;
+        const _status = status ? MANGA_STATUS[status] : -1;
+        const _top = top ? MANGA_SORT[top] : 0;
+        const _minChapter = minchapter ? minchapter : 1;
+        const _page = page ? page : 1;
+
+        const key = `${KEY_CACHE_ADVANCED_MANGA}${_genres}${_minChapter}${_top}${_page}${_status}${_gender}`;
+
+        const redisData = await cachingClient.get(key);
+
+        if (!redisData) {
+            const { mangaData, totalPages } = await Nt.advancedSearch(
+                _genres,
+                _minChapter,
+                _top,
+                _page,
+                _status,
+                _gender,
+            );
+
+            if (!mangaData.length) {
+                return res.status(404).json({ success: false });
+            }
+
+            return res.status(200).json({
+                success: true,
+                data: mangaData,
+                totalPages,
+                hasPrevPage: Number(page) > 1 ? true : false,
+                hasNextPage: Number(page) < Number(totalPages) ? true : false,
+            });
+        }
+
+        const { mangaData, totalPages } = JSON.parse(String(redisData));
+
+        if (!mangaData.length) return res.status(404).json({ success: false });
+
+        return res.status(200).json({
+            success: true,
+            data: mangaData,
+            totalPages: totalPages,
+            hasPrevPage: Number(page) > 1 ? true : false,
+            hasNextPage: Number(page) < Number(totalPages) ? true : false,
+        });
+    };
 
     const getNewUpdatedManga = async (
         req: Request<{}, {}, {}, Pick<RankingQuery, 'page'>>,
@@ -436,6 +482,7 @@ function ntController() {
         getRanking,
         filtersManga,
         getNewUpdatedManga,
+        advancedSearch,
     };
 }
 
