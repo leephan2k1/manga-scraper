@@ -544,6 +544,16 @@ export default class NtModel extends Scraper {
                     .querySelector('a')
                     ?.getAttribute('data-id');
 
+                const arr = String(
+                    chapter.querySelector('a')?.getAttribute('href'),
+                ).split('/');
+
+                const chapterStr = arr[arr.length - 2];
+
+                const chapterNumber = chapterStr.slice(
+                    chapterStr.indexOf('-') + 1,
+                );
+
                 const updatedAt = normalizeString(
                     String(chapter.querySelectorAll('div')[1].textContent),
                 );
@@ -552,7 +562,13 @@ export default class NtModel extends Scraper {
                     String(chapter.querySelectorAll('div')[2].textContent),
                 );
 
-                return { chapterId, chapterTitle, updatedAt, view };
+                return {
+                    chapterId,
+                    chapterNumber,
+                    chapterTitle,
+                    updatedAt,
+                    view,
+                };
             });
 
             const thumbnail = this.unshiftProtocol(
