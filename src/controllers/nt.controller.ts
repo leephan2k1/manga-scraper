@@ -1,5 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 
+import { getCache } from '../services/cache.service';
+
 import {
     KEY_CACHE_ADVANCED_MANGA,
     KEY_CACHE_COMPLETED_MANGA,
@@ -9,7 +11,6 @@ import {
     KEY_CACHE_RANKING_MANGA,
 } from '../constants/nt';
 import NtModel from '../models/Nt.model';
-import { cachingClient } from '../services/cache.service';
 import { GENRES_NT, MANGA_SORT, MANGA_STATUS } from '../types/nt';
 
 const baseUrl = process.env.NT_SOURCE_URL as string;
@@ -82,7 +83,7 @@ function ntController() {
 
         const key = `${KEY_CACHE_ADVANCED_MANGA}${_genres}${_minChapter}${_top}${_page}${_status}${_gender}`;
 
-        const redisData = await cachingClient.get(key);
+        const redisData = await getCache(key);
 
         if (!redisData) {
             const { mangaData, totalPages } = await Nt.advancedSearch(
@@ -130,7 +131,7 @@ function ntController() {
 
         const key = `${KEY_CACHE_NEW_UPDATED_MANGA}${_page}`;
 
-        const redisData = await cachingClient.get(key);
+        const redisData = await getCache(key);
 
         if (!redisData) {
             const { mangaData, totalPages } = await Nt.getNewUpdatedManga(
@@ -178,7 +179,7 @@ function ntController() {
             }${genres}${MANGA_SORT[top]}`;
         }
 
-        const redisData = await cachingClient.get(key);
+        const redisData = await getCache(key);
 
         if (!redisData) {
             const { mangaData, totalPages } = await Nt.filtersManga(
@@ -221,14 +222,14 @@ function ntController() {
     ) => {
         const { page } = req.query;
 
-        //make sure model same this key:
         const key = `${KEY_CACHE_COMPLETED_MANGA}${
             page !== undefined ? page : 1
         }`;
 
-        const redisData = await cachingClient.get(key);
+        const redisData = await getCache(key);
 
         if (!redisData) {
+            console.log('cache miss');
             const { mangaData, totalPages } = await Nt.getCompletedManga(
                 Number(page),
             );
@@ -245,7 +246,7 @@ function ntController() {
                 hasNextPage: Number(page) < Number(totalPages) ? true : false,
             });
         }
-
+        console.log('cache hit');
         const { mangaData, totalPages } = JSON.parse(String(redisData));
 
         if (!mangaData.length) return res.status(404).json({ success: false });
@@ -271,7 +272,7 @@ function ntController() {
             page !== undefined ? page : 1
         }`;
 
-        const redisData = await cachingClient.get(key);
+        const redisData = await getCache(key);
 
         if (!redisData) {
             const { mangaData, totalPages } = await Nt.searchParams(
@@ -319,7 +320,7 @@ function ntController() {
             top ? MANGA_SORT[top] : 10
         }${status ? MANGA_STATUS[status] : -1}${genres ? genres : ''}`;
 
-        const redisData = await cachingClient.get(key);
+        const redisData = await getCache(key);
 
         if (!redisData) {
             const { mangaData, totalPages } = await Nt.getRanking(

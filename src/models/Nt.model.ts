@@ -1,5 +1,5 @@
 import { AxiosRequestConfig } from 'axios';
-import { JSDOM } from 'jsdom';
+import { parse } from 'node-html-parser';
 
 import {
     DEFAULT_EXPIRED_ADVANCED_SEARCH_MANGA,
@@ -15,7 +15,7 @@ import {
     KEY_CACHE_RANKING_MANGA,
 } from '../constants/nt';
 import Scraper from '../libs/Scraper';
-import cache from '../services/cache.service';
+import { cache } from '../services/cache.service';
 import { GENRES } from '../types/genres';
 import { GENRES_NT, NtDataList } from '../types/nt';
 import { isExactMatch, normalizeString } from '../utils/stringHandler';
@@ -49,13 +49,14 @@ export default class NtModel extends Scraper {
         return this.instance;
     }
 
-    private parseSource(document: Document): NtDataList {
+    private parseSource(document: HTMLElement | Document): NtDataList {
         const mangaList = document.querySelectorAll('.ModuleContent .item');
 
         const mangaData = [...mangaList].map((manga) => {
             const thumbnail = this.unshiftProtocol(
-                String(manga.querySelector('img')?.dataset.original) ||
-                    String(manga.querySelector('img')?.getAttribute('src')),
+                String(
+                    manga.querySelector('img')?.getAttribute('data-original'),
+                ) || String(manga.querySelector('img')?.getAttribute('src')),
             );
             const newChapter = manga.querySelector('ul > li > a')?.innerHTML;
             const updatedAt = manga.querySelector('ul > li > i')?.innerHTML;
@@ -146,9 +147,9 @@ export default class NtModel extends Scraper {
                     params: { 'tac-gia': author },
                 },
             );
-            const { window } = new JSDOM(data);
-            const { document } = window;
+            const document = parse(data);
 
+            //@ts-ignore
             return this.parseSource(document);
         } catch (err) {
             console.log(err);
@@ -177,9 +178,9 @@ export default class NtModel extends Scraper {
                 `${this.baseUrl}/tim-truyen${_genres}`,
                 { params: queryParams },
             );
-            const { window } = new JSDOM(data);
-            const { document } = window;
+            const document = parse(data);
 
+            //@ts-ignore
             const { mangaData, totalPages } = this.parseSource(document);
 
             await cache(
@@ -220,9 +221,9 @@ export default class NtModel extends Scraper {
                     },
                 },
             );
-            const { window } = new JSDOM(data);
-            const { document } = window;
+            const document = parse(data);
 
+            //@ts-ignore
             const { mangaData, totalPages } = this.parseSource(document);
 
             await cache(
@@ -253,9 +254,9 @@ export default class NtModel extends Scraper {
                     params: queryParams,
                 },
             );
-            const { window } = new JSDOM(data);
-            const { document } = window;
+            const document = parse(data);
 
+            //@ts-ignore
             const { mangaData, totalPages } = this.parseSource(document);
 
             await cache(
@@ -302,9 +303,9 @@ export default class NtModel extends Scraper {
                 `${this.baseUrl}/tim-truyen${_genres}`,
                 { params: queryParams },
             );
-            const { window } = new JSDOM(data);
-            const { document } = window;
+            const document = parse(data);
 
+            //@ts-ignore
             const { mangaData, totalPages } = this.parseSource(document);
 
             await cache(
@@ -329,8 +330,7 @@ export default class NtModel extends Scraper {
                 `${this.baseUrl}${baseUrlSearch}`,
                 { params: { q: query } },
             );
-            const { window } = new JSDOM(data);
-            const { document } = window;
+            const document = parse(data);
 
             const protocols = ['http', 'https'];
 
@@ -394,9 +394,9 @@ export default class NtModel extends Scraper {
                     params: { page: page },
                 },
             );
-            const { window } = new JSDOM(data);
-            const { document } = window;
+            const document = parse(data);
 
+            //@ts-ignore
             const { mangaData, totalPages } = this.parseSource(document);
 
             await cache(
@@ -408,7 +408,7 @@ export default class NtModel extends Scraper {
 
             return { mangaData, totalPages };
         } catch (error) {
-            console.log(error);
+            console.log('::: ', error);
             return { mangaData: [], totalPages: 0 };
         }
     }
@@ -428,8 +428,6 @@ export default class NtModel extends Scraper {
             page ? page : ''
         }${top}${status}${genres}`;
 
-        // console.log('>>> ', queryParams);
-
         try {
             const { data } = await this.client.get(
                 `${this.baseUrl}/tim-truyen${genres && `/${genres}`}`,
@@ -438,9 +436,9 @@ export default class NtModel extends Scraper {
                 },
             );
 
-            const { window } = new JSDOM(data);
-            const { document } = window;
+            const document = parse(data);
 
+            //@ts-ignore
             const { mangaData, totalPages } = this.parseSource(document);
 
             cache(
@@ -464,8 +462,7 @@ export default class NtModel extends Scraper {
             const { data } = await this.client.get(
                 `${this.baseUrl}/${baseUrlMangaDetail}/${mangaSlug}`,
             );
-            const { window } = new JSDOM(data);
-            const { document } = window;
+            const document = parse(data);
 
             const rootSelector = '#item-detail';
 
@@ -616,8 +613,10 @@ export default class NtModel extends Scraper {
             const { data } = await this.client.get(
                 `${this.baseUrl}/truyen-tranh/${mangaSlug}/chap-${chapter}/${chapterId}`,
             );
-            const { window } = new JSDOM(data);
-            const { document } = window;
+            const document = parse(data);
+
+            //@ts-ignore
+
             const protocols = ['http', 'https'];
 
             const pagesRaw = document.querySelectorAll(
@@ -625,10 +624,16 @@ export default class NtModel extends Scraper {
             );
 
             const pages = [...pagesRaw].map((page) => {
-                const id = page.querySelector('img')?.dataset.index;
+                const id = page
+                    .querySelector('img')
+                    ?.getAttribute('data-index');
 
-                const source = page.querySelector('img')?.dataset.original;
-                const srcCDN = page.querySelector('img')?.dataset.cdn;
+                const source = page
+                    .querySelector('img')
+                    ?.getAttribute('data-original');
+                const srcCDN = page
+                    .querySelector('img')
+                    ?.getAttribute('data-cdn');
 
                 const imgSrc = protocols.some((protocol) =>
                     source?.includes(protocol),
@@ -655,8 +660,7 @@ export default class NtModel extends Scraper {
     //     const { data } = await this.client.get(
     //         `${this.baseUrl}/tim-truyen-nang-cao`,
     //     );
-    //     const { window } = new JSDOM(data);
-    //     const { document } = window;
+    //     const document = parse(data);
 
     //     const form = document.querySelectorAll(
     //         '.advsearch-form .form-group',
@@ -667,7 +671,7 @@ export default class NtModel extends Scraper {
     //     if (items) {
     //         const dataTest = [...items].map((item) => {
     //             const title = normalizeString(String(item.textContent));
-    //             const id = item.querySelector('span')?.dataset.id;
+    //             const id = item.querySelector('span')?.getAttribute('data-id');
 
     //             return { title, id };
     //         });

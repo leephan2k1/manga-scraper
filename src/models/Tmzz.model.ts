@@ -1,5 +1,5 @@
 import Scraper from '../libs/Scraper';
-import { JSDOM } from 'jsdom';
+import { parse } from 'node-html-parser';
 import { AxiosRequestConfig } from 'axios';
 import { MangaTmzzSection } from '../types/tmzz';
 
@@ -28,8 +28,8 @@ export default class TmzzModel extends Scraper {
 
     public async getNewManga(Section: MangaTmzzSection) {
         const { data } = await this.client.get(this.baseUrl);
-        const { window } = new JSDOM(data);
-        const { document } = window;
+
+        const document = parse(data);
 
         const mangaList = document.querySelectorAll('.manga-list');
         const newMangaDOM = mangaList[Section].querySelectorAll('li');

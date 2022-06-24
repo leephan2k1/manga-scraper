@@ -10,6 +10,7 @@ import route from './routes';
 import tasks from './services/cron.service';
 
 dotenv.config();
+
 const app = express();
 const port = process.env.PORT || 5001;
 
