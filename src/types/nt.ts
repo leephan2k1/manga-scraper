@@ -15,8 +15,8 @@ export interface MangaPreview {
 //nettruyen config: https://www.nettruyenco.com/tim-truyen?status=-1&sort=10
 export enum MANGA_STATUS {
     'all' = -1,
-    'completed' = 2,
     'ongoing' = 1,
+    'completed' = 2,
 }
 //nettruyen config: https://www.nettruyenco.com/tim-truyen?status=-1&sort=10
 export enum MANGA_SORT {

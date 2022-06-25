@@ -74,7 +74,7 @@ function ntController() {
     ) => {
         const { genres, minchapter, top, page, status, gender } = req.query;
 
-        const _genres = genres ? genres : '';
+        const _genres = genres ? genres : '-1';
         const _gender = gender ? gender : -1;
         const _status = status ? MANGA_STATUS[status] : -1;
         const _top = top ? MANGA_SORT[top] : 0;
@@ -86,6 +86,7 @@ function ntController() {
         const redisData = await getCache(key);
 
         if (!redisData) {
+            console.log('cache miss');
             const { mangaData, totalPages } = await Nt.advancedSearch(
                 _genres,
                 _minChapter,

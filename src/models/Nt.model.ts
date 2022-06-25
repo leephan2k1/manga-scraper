@@ -49,8 +49,8 @@ export default class NtModel extends Scraper {
         return this.instance;
     }
 
-    private parseSource(document: HTMLElement | Document): NtDataList {
-        const mangaList = document.querySelectorAll('.ModuleContent .item');
+    private parseSource(document: HTMLElement): NtDataList {
+        const mangaList = document.querySelectorAll('.item');
 
         const mangaData = [...mangaList].map((manga) => {
             const thumbnail = this.unshiftProtocol(
@@ -58,6 +58,7 @@ export default class NtModel extends Scraper {
                     manga.querySelector('img')?.getAttribute('data-original'),
                 ) || String(manga.querySelector('img')?.getAttribute('src')),
             );
+
             const newChapter = manga.querySelector('ul > li > a')?.innerHTML;
             const updatedAt = manga.querySelector('ul > li > i')?.innerHTML;
             const view = manga.querySelector('pull-left > i')?.innerHTML;
@@ -207,6 +208,10 @@ export default class NtModel extends Scraper {
     ) {
         const key = `${KEY_CACHE_ADVANCED_MANGA}${genres}${minchapter}${top}${page}${status}${gender}`;
 
+        // console.log(
+        //     `genres: ${genres}, minchapter: ${minchapter}, top: ${top}, page: ${page}, status: ${status}, gender: ${gender}`,
+        // );
+
         try {
             const { data } = await this.client.get(
                 `${this.baseUrl}/tim-truyen-nang-cao`,
@@ -221,10 +226,13 @@ export default class NtModel extends Scraper {
                     },
                 },
             );
+
             const document = parse(data);
 
             //@ts-ignore
             const { mangaData, totalPages } = this.parseSource(document);
+
+            // console.log(':: ', document.querySelector('ModuleContent'));
 
             await cache(
                 key,
