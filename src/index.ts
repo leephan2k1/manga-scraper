@@ -1,4 +1,4 @@
-import cors from 'cors';
+import cors, { CorsOptions } from 'cors';
 import dotenv from 'dotenv';
 import express, { NextFunction, Request, Response } from 'express';
 import createError from 'http-errors';
@@ -14,8 +14,15 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 5001;
 
+const whitelist = ['http://localhost:3000', 'https://kyotomanga.live'];
+
+const corsOptions: CorsOptions = {
+    origin: whitelist,
+    preflightContinue: false,
+};
+
 //apply middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(logger('dev'));
 
