@@ -10,6 +10,11 @@ interface QuerySearch {
     q: string;
 }
 
+interface ChaptersParams {
+    mangaSlug: string;
+    chapterId: string;
+}
+
 function lhController() {
     const searchManga = async (
         req: Request<{}, {}, {}, QuerySearch>,
@@ -23,16 +28,16 @@ function lhController() {
         res.status(200).json({ data: manga });
     };
 
-    const getManga = async (req: Request, res: Response) => {
-        const { mangaSlug } = req.params;
-        const manga = await Lh.getManga(mangaSlug);
+    const getChapters = async (req: Request<ChaptersParams>, res: Response) => {
+        const { mangaSlug, chapterId } = req.params;
+        const manga = await Lh.getChapters(mangaSlug, chapterId);
 
         if (!manga) return res.status(404).json({ message: 'error' });
 
-        res.status(200).json({ data: manga });
+        res.status(200).json({ success: true, data: manga });
     };
 
-    return { searchManga, getManga };
+    return { searchManga, getChapters };
 }
 
 export default lhController;
