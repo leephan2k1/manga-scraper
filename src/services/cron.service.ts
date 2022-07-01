@@ -40,15 +40,15 @@ async function cachingNewUpdatedManga() {
 }
 
 tasks.push(
-    cron.schedule('*/5 * * * *', () => {
-        console.log('caching new UPDATED manga every 5 minutes');
+    cron.schedule('* */2 * * *', () => {
+        console.log('caching new UPDATED manga every 2 hours');
         cachingNewUpdatedManga();
     }),
 );
 
 tasks.push(
-    cron.schedule('*/5 * * * *', () => {
-        console.log('caching new manga every 5 minutes');
+    cron.schedule('* */2 * * *', () => {
+        console.log('caching new manga every 2 hours');
         cachingNewManga();
     }),
 );

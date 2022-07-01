@@ -1,15 +1,15 @@
 import Router from 'express-promise-router';
-import tmzzController from '../controllers/lh.controller';
+import lhController from '../controllers/lh.controller';
 const router = Router();
 
 /*
 /lh/search
 */
-router.route('/search').get(tmzzController().searchManga);
+router.route('/search').get(lhController().searchManga);
 
 /*
-/lh/manga
+/lh/chapters
 */
-router.route('/manga/:mangaSlug').get(tmzzController().getManga);
+router.route('/chapters/:mangaSlug/:chapterId').get(lhController().getChapters);
 
 export default router;

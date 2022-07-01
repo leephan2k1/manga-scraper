@@ -43,17 +43,30 @@ export default class TmzzModel extends Scraper {
         }
     }
 
-    public async getManga(slug: string) {
+    public async getChapters(mangaSlug: string, chapterId: string) {
         try {
             const { data } = await this.client.get(
-                `${this.baseUrl}/truyen-tranh/${slug}`,
+                `${this.baseUrl}/truyen-tranh/${mangaSlug}/${chapterId}`,
             );
 
             const document = parse(data);
 
-            const chapterList = document.querySelector('.list-chapters');
+            const imagesList = document.querySelectorAll(
+                '#chapter-content img',
+            );
 
-            return data;
+            const images = Array.from(imagesList).map((imageItem, index) => {
+                const imgSrc = imageItem.getAttribute('data-src')?.trim();
+                const imgSrcCDN = imageItem.getAttribute('src')?.trim();
+
+                return {
+                    id: index,
+                    imgSrc,
+                    imgSrcCDN,
+                };
+            });
+
+            return images;
         } catch (err) {
             console.log(err);
             return null;
