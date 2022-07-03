@@ -13,8 +13,10 @@ router.route('/search').get(lhController().searchManga);
 router.route('/manga/:mangaSlug').get(lhController().getManga);
 
 /*
-/lh/chapters
+/lh/chapter
 */
-router.route('/chapters/:mangaSlug/:chapterId').get(lhController().getChapters);
+router
+    .route('/chapter/:mangaSlug/:chapter/:chapterId')
+    .get(lhController().getChapters);
 
 export default router;
