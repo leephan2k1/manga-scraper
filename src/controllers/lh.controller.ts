@@ -10,6 +10,10 @@ interface QuerySearch {
     q: string;
 }
 
+interface QueryManga {
+    limit: string;
+}
+
 interface ChaptersParams {
     mangaSlug: string;
     chapterId: string;
@@ -37,7 +41,20 @@ function lhController() {
         res.status(200).json({ success: true, data: manga });
     };
 
-    return { searchManga, getChapters };
+    const getManga = async (
+        req: Request<Pick<ChaptersParams, 'mangaSlug'>, {}, {}, QueryManga>,
+        res: Response,
+    ) => {
+        const { mangaSlug } = req.params;
+        const { limit } = req.query;
+        const manga = await Lh.getComic(mangaSlug, +limit);
+
+        if (!manga) return res.status(404).json({ message: 'error get manga' });
+
+        res.status(200).json({ success: true, data: manga });
+    };
+
+    return { searchManga, getChapters, getManga };
 }
 
 export default lhController;
