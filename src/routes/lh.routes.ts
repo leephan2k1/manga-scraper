@@ -8,6 +8,11 @@ const router = Router();
 router.route('/search').get(lhController().searchManga);
 
 /*
+/lh/manga
+*/
+router.route('/manga/:mangaSlug').get(lhController().getManga);
+
+/*
 /lh/chapters
 */
 router.route('/chapters/:mangaSlug/:chapterId').get(lhController().getChapters);
