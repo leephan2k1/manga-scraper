@@ -61,7 +61,12 @@ export default class TmzzModel extends Scraper {
                 chapterId,
                 chapterNumber:
                     chapterId
-                        ?.slice(0, chapterId.lastIndexOf('-'))
+                        ?.slice(
+                            0,
+                            chapterId.lastIndexOf('-') > 0
+                                ? chapterId.lastIndexOf('-')
+                                : chapterId.length,
+                        )
                         .replace(/^\D+/g, '') ||
                     chapterTitle?.replace(/^\D+/g, ''),
                 chapterTitle,
