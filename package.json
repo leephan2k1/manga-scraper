@@ -4,7 +4,7 @@
     "description": "",
     "main": "index.ts",
     "scripts": {
-        "start": "node src/build",
+        "start": "node build",
         "build": "tsc -p .",
         "dev": "tsnd --respawn --clear src/index.ts"
     },
