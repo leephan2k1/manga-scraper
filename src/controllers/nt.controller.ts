@@ -3,7 +3,6 @@ import { NextFunction, Request, Response } from 'express';
 import { getCache } from '../services/cache.service';
 
 import {
-    KEY_CACHE_ADVANCED_MANGA,
     KEY_CACHE_COMPLETED_MANGA,
     KEY_CACHE_FILTERS_MANGA,
     KEY_CACHE_NEW_MANGA,
@@ -81,42 +80,23 @@ function ntController() {
         const _minChapter = minchapter ? minchapter : 1;
         const _page = page ? page : 1;
 
-        const key = `${KEY_CACHE_ADVANCED_MANGA}${_genres}${_minChapter}${_top}${_page}${_status}${_gender}`;
+        const { mangaData, totalPages } = await Nt.advancedSearch(
+            _genres,
+            _minChapter,
+            _top,
+            _page,
+            _status,
+            _gender,
+        );
 
-        const redisData = await getCache(key);
-
-        if (!redisData) {
-            console.log('cache miss');
-            const { mangaData, totalPages } = await Nt.advancedSearch(
-                _genres,
-                _minChapter,
-                _top,
-                _page,
-                _status,
-                _gender,
-            );
-
-            if (!mangaData.length) {
-                return res.status(404).json({ success: false });
-            }
-
-            return res.status(200).json({
-                success: true,
-                data: mangaData,
-                totalPages,
-                hasPrevPage: Number(page) > 1 ? true : false,
-                hasNextPage: Number(page) < Number(totalPages) ? true : false,
-            });
+        if (!mangaData.length) {
+            return res.status(404).json({ success: false });
         }
-
-        const { mangaData, totalPages } = JSON.parse(String(redisData));
-
-        if (!mangaData.length) return res.status(404).json({ success: false });
 
         return res.status(200).json({
             success: true,
             data: mangaData,
-            totalPages: totalPages,
+            totalPages,
             hasPrevPage: Number(page) > 1 ? true : false,
             hasNextPage: Number(page) < Number(totalPages) ? true : false,
         });

@@ -2,12 +2,10 @@ import { AxiosRequestConfig } from 'axios';
 import { parse } from 'node-html-parser';
 
 import {
-    DEFAULT_EXPIRED_ADVANCED_SEARCH_MANGA,
     DEFAULT_EXPIRED_COMPLETED_MANGA_TIME,
     DEFAULT_EXPIRED_NEW_UPDATED_MANGA_TIME,
     DEFAULT_EXPIRED_NEWMANGA_TIME,
     DEFAULT_EXPIRED_RANKING_MANGA_TIME,
-    KEY_CACHE_ADVANCED_MANGA,
     KEY_CACHE_COMPLETED_MANGA,
     KEY_CACHE_FILTERS_MANGA,
     KEY_CACHE_NEW_MANGA,
@@ -206,8 +204,6 @@ export default class NtModel extends Scraper {
         status: number,
         gender: number,
     ) {
-        const key = `${KEY_CACHE_ADVANCED_MANGA}${genres}${minchapter}${top}${page}${status}${gender}`;
-
         // console.log(
         //     `genres: ${genres}, minchapter: ${minchapter}, top: ${top}, page: ${page}, status: ${status}, gender: ${gender}`,
         // );
@@ -231,15 +227,6 @@ export default class NtModel extends Scraper {
 
             //@ts-ignore
             const { mangaData, totalPages } = this.parseSource(document);
-
-            // console.log(':: ', document.querySelector('ModuleContent'));
-
-            await cache(
-                key,
-                JSON.stringify({ mangaData, totalPages }),
-                page,
-                DEFAULT_EXPIRED_ADVANCED_SEARCH_MANGA,
-            );
 
             return { mangaData, totalPages };
         } catch (err) {
