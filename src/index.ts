@@ -7,15 +7,15 @@ import logger from 'morgan';
 import { ErrorType } from '@/types/http';
 
 import route from './routes';
-// import tasks from './services/cron.service';
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 5001;
 
+//remove this if you don't need to protect your host
 const whitelist = ['http://localhost:3000', 'https://kyotomanga.live'];
-
+//and this
 const corsOptions: CorsOptions = {
     origin: whitelist,
     preflightContinue: false,
@@ -58,5 +58,3 @@ app.use((err: ErrorType, req: Request, res: Response, next: NextFunction) => {
 app.listen(port, () => {
     console.log(`⚡️[server]: Server is running at ${port}`);
 });
-
-// tasks.forEach((task) => task.start());

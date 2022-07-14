@@ -1,19 +1,7 @@
 import { AxiosRequestConfig } from 'axios';
 import { parse } from 'node-html-parser';
 
-import {
-    DEFAULT_EXPIRED_COMPLETED_MANGA_TIME,
-    DEFAULT_EXPIRED_NEW_UPDATED_MANGA_TIME,
-    DEFAULT_EXPIRED_NEWMANGA_TIME,
-    DEFAULT_EXPIRED_RANKING_MANGA_TIME,
-    KEY_CACHE_COMPLETED_MANGA,
-    KEY_CACHE_FILTERS_MANGA,
-    KEY_CACHE_NEW_MANGA,
-    KEY_CACHE_NEW_UPDATED_MANGA,
-    KEY_CACHE_RANKING_MANGA,
-} from '../constants/nt';
 import Scraper from '../libs/Scraper';
-import { cache } from '../services/cache.service';
 import { GENRES } from '../types/genres';
 import { GENRES_NT, NtDataList } from '../types/nt';
 import { isExactMatch, normalizeString } from '../utils/stringHandler';
@@ -170,8 +158,6 @@ export default class NtModel extends Scraper {
             page,
         };
 
-        const key = `${KEY_CACHE_NEW_MANGA}${_genres}${status}${sort}${page}`;
-
         try {
             const { data } = await this.client.get(
                 `${this.baseUrl}/tim-truyen${_genres}`,
@@ -181,13 +167,6 @@ export default class NtModel extends Scraper {
 
             //@ts-ignore
             const { mangaData, totalPages } = this.parseSource(document);
-
-            await cache(
-                key,
-                JSON.stringify({ mangaData, totalPages }),
-                page,
-                DEFAULT_EXPIRED_NEWMANGA_TIME,
-            );
 
             return { mangaData, totalPages };
         } catch (err) {
@@ -240,8 +219,6 @@ export default class NtModel extends Scraper {
             page,
         };
 
-        const key = `${KEY_CACHE_NEW_UPDATED_MANGA}${page}`;
-
         try {
             const { data } = await this.client.get(
                 `${this.baseUrl}/tim-truyen`,
@@ -253,13 +230,6 @@ export default class NtModel extends Scraper {
 
             //@ts-ignore
             const { mangaData, totalPages } = this.parseSource(document);
-
-            await cache(
-                key,
-                JSON.stringify({ mangaData, totalPages }),
-                page,
-                DEFAULT_EXPIRED_NEW_UPDATED_MANGA_TIME,
-            );
 
             return { mangaData, totalPages };
         } catch (error) {
@@ -285,14 +255,6 @@ export default class NtModel extends Scraper {
         if (status) queryParams.status = status;
         if (page) queryParams.page = page;
 
-        let key: string = '';
-
-        if (genres === 'manga-112' && sort) {
-            key = `${KEY_CACHE_FILTERS_MANGA}${
-                page !== undefined ? page : 1
-            }${genres}${sort}`;
-        }
-
         try {
             const { data } = await this.client.get(
                 `${this.baseUrl}/tim-truyen${_genres}`,
@@ -302,13 +264,6 @@ export default class NtModel extends Scraper {
 
             //@ts-ignore
             const { mangaData, totalPages } = this.parseSource(document);
-
-            await cache(
-                key,
-                JSON.stringify({ mangaData, totalPages }),
-                page ? page : 1,
-                DEFAULT_EXPIRED_NEW_UPDATED_MANGA_TIME,
-            );
 
             return { mangaData, totalPages };
         } catch (error) {
@@ -380,8 +335,6 @@ export default class NtModel extends Scraper {
     }
 
     public async getCompletedManga(page: number = 1) {
-        const key = `${KEY_CACHE_COMPLETED_MANGA}${page}`;
-
         try {
             const { data } = await this.client.get(
                 `${this.baseUrl}/truyen-full`,
@@ -393,13 +346,6 @@ export default class NtModel extends Scraper {
 
             //@ts-ignore
             const { mangaData, totalPages } = this.parseSource(document);
-
-            await cache(
-                key,
-                JSON.stringify({ mangaData, totalPages }),
-                page,
-                DEFAULT_EXPIRED_COMPLETED_MANGA_TIME,
-            );
 
             return { mangaData, totalPages };
         } catch (error) {
@@ -419,9 +365,6 @@ export default class NtModel extends Scraper {
             sort: top,
             page: page,
         };
-        const key = `${KEY_CACHE_RANKING_MANGA}${
-            page ? page : ''
-        }${top}${status}${genres}`;
 
         try {
             const { data } = await this.client.get(
@@ -435,13 +378,6 @@ export default class NtModel extends Scraper {
 
             //@ts-ignore
             const { mangaData, totalPages } = this.parseSource(document);
-
-            cache(
-                key,
-                JSON.stringify({ mangaData, totalPages }),
-                page !== undefined ? page : 1,
-                DEFAULT_EXPIRED_RANKING_MANGA_TIME,
-            );
 
             return { mangaData, totalPages };
         } catch (err) {
