@@ -3,13 +3,19 @@ import dotenv from 'dotenv';
 import express, { NextFunction, Request, Response } from 'express';
 import createError from 'http-errors';
 import logger from 'morgan';
+import webPush from 'web-push';
 
 import { ErrorType } from '@/types/http';
 
+import { privateVapidKey, publicVapidKey, connectDb } from './config';
 import route from './routes';
-// import tasks from './services/cron.service';
+
+import tasks from './services/cron.service';
 
 dotenv.config();
+
+//connect to mongodb:
+connectDb();
 
 const app = express();
 const port = process.env.PORT || 5001;
@@ -25,6 +31,12 @@ const corsOptions: CorsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(logger('dev'));
+
+webPush.setVapidDetails(
+    'https://kyotomanga.live',
+    publicVapidKey,
+    privateVapidKey,
+);
 
 //router
 route(app);
@@ -59,4 +71,4 @@ app.listen(port, () => {
     console.log(`⚡️[server]: Server is running at ${port}`);
 });
 
-// tasks.forEach((task) => task.start());
+tasks.forEach((task) => task.start());
