@@ -1,14 +1,14 @@
 import { NextFunction, Request, Response } from 'express';
 
-import { getCache } from '../services/cache.service';
+// import { getCache } from '../services/cache.service';
 
-import {
-    KEY_CACHE_COMPLETED_MANGA,
-    KEY_CACHE_FILTERS_MANGA,
-    KEY_CACHE_NEW_MANGA,
-    KEY_CACHE_NEW_UPDATED_MANGA,
-    KEY_CACHE_RANKING_MANGA,
-} from '../constants/nt';
+// import {
+//     KEY_CACHE_COMPLETED_MANGA,
+//     KEY_CACHE_FILTERS_MANGA,
+//     KEY_CACHE_NEW_MANGA,
+//     KEY_CACHE_NEW_UPDATED_MANGA,
+//     KEY_CACHE_RANKING_MANGA,
+// } from '../constants/nt';
 import NtModel from '../models/Nt.model';
 import { GENRES_NT, MANGA_SORT, MANGA_STATUS } from '../types/nt';
 
@@ -110,39 +110,37 @@ function ntController() {
         const { page } = req.query;
         const _page = page !== undefined ? page : 1;
 
-        const key = `${KEY_CACHE_NEW_UPDATED_MANGA}${_page}`;
+        // const key = `${KEY_CACHE_NEW_UPDATED_MANGA}${_page}`;
 
-        const redisData = await getCache(key);
+        // const redisData = await getCache(key);
 
-        if (!redisData) {
-            const { mangaData, totalPages } = await Nt.getNewUpdatedManga(
-                _page,
-            );
+        // if (!redisData) {
+        const { mangaData, totalPages } = await Nt.getNewUpdatedManga(_page);
 
-            if (!mangaData.length) {
-                return res.status(404).json({ success: false });
-            }
-
-            return res.status(200).json({
-                success: true,
-                data: mangaData,
-                totalPages,
-                hasPrevPage: Number(page) > 1 ? true : false,
-                hasNextPage: Number(page) < Number(totalPages) ? true : false,
-            });
+        if (!mangaData.length) {
+            return res.status(404).json({ success: false });
         }
-
-        const { mangaData, totalPages } = JSON.parse(String(redisData));
-
-        if (!mangaData.length) return res.status(404).json({ success: false });
 
         return res.status(200).json({
             success: true,
             data: mangaData,
-            totalPages: totalPages,
+            totalPages,
             hasPrevPage: Number(page) > 1 ? true : false,
             hasNextPage: Number(page) < Number(totalPages) ? true : false,
         });
+        // }
+
+        // const { mangaData, totalPages } = JSON.parse(String(redisData));
+
+        // if (!mangaData.length) return res.status(404).json({ success: false });
+
+        // return res.status(200).json({
+        //     success: true,
+        //     data: mangaData,
+        //     totalPages: totalPages,
+        //     hasPrevPage: Number(page) > 1 ? true : false,
+        //     hasNextPage: Number(page) < Number(totalPages) ? true : false,
+        // });
     };
 
     const filtersManga = async (
@@ -154,46 +152,46 @@ function ntController() {
         let key: string = '';
 
         //cache data for home page:::
-        if (genres === 'manga-112' && top) {
-            key = `${KEY_CACHE_FILTERS_MANGA}${
-                page !== undefined ? page : 1
-            }${genres}${MANGA_SORT[top]}`;
+        // if (genres === 'manga-112' && top) {
+        //     key = `${KEY_CACHE_FILTERS_MANGA}${
+        //         page !== undefined ? page : 1
+        //     }${genres}${MANGA_SORT[top]}`;
+        // }
+
+        // const redisData = await getCache(key);
+
+        // if (!redisData) {
+        const { mangaData, totalPages } = await Nt.filtersManga(
+            genres !== undefined ? genres : null,
+            page !== undefined ? page : null,
+            top !== undefined ? MANGA_SORT[top] : null,
+            status !== undefined ? MANGA_STATUS[status] : -1,
+        );
+
+        if (!mangaData.length) {
+            return res.status(404).json({ success: false });
         }
-
-        const redisData = await getCache(key);
-
-        if (!redisData) {
-            const { mangaData, totalPages } = await Nt.filtersManga(
-                genres !== undefined ? genres : null,
-                page !== undefined ? page : null,
-                top !== undefined ? MANGA_SORT[top] : null,
-                status !== undefined ? MANGA_STATUS[status] : -1,
-            );
-
-            if (!mangaData.length) {
-                return res.status(404).json({ success: false });
-            }
-
-            return res.status(200).json({
-                success: true,
-                data: mangaData,
-                totalPages,
-                hasPrevPage: Number(page) > 1 ? true : false,
-                hasNextPage: Number(page) < Number(totalPages) ? true : false,
-            });
-        }
-
-        const { mangaData, totalPages } = JSON.parse(String(redisData));
-
-        if (!mangaData.length) return res.status(404).json({ success: false });
 
         return res.status(200).json({
             success: true,
             data: mangaData,
-            totalPages: totalPages,
+            totalPages,
             hasPrevPage: Number(page) > 1 ? true : false,
             hasNextPage: Number(page) < Number(totalPages) ? true : false,
         });
+        // }
+
+        // const { mangaData, totalPages } = JSON.parse(String(redisData));
+
+        // if (!mangaData.length) return res.status(404).json({ success: false });
+
+        // return res.status(200).json({
+        //     success: true,
+        //     data: mangaData,
+        //     totalPages: totalPages,
+        //     hasPrevPage: Number(page) > 1 ? true : false,
+        //     hasNextPage: Number(page) < Number(totalPages) ? true : false,
+        // });
     };
 
     const getCompletedManga = async (
@@ -203,42 +201,42 @@ function ntController() {
     ) => {
         const { page } = req.query;
 
-        const key = `${KEY_CACHE_COMPLETED_MANGA}${
-            page !== undefined ? page : 1
-        }`;
+        // const key = `${KEY_CACHE_COMPLETED_MANGA}${
+        //     page !== undefined ? page : 1
+        // }`;
 
-        const redisData = await getCache(key);
+        // const redisData = await getCache(key);
 
-        if (!redisData) {
-            console.log('cache miss');
-            const { mangaData, totalPages } = await Nt.getCompletedManga(
-                Number(page),
-            );
+        // if (!redisData) {
+        // console.log('cache miss');
+        const { mangaData, totalPages } = await Nt.getCompletedManga(
+            Number(page),
+        );
 
-            if (!mangaData.length) {
-                return res.status(404).json({ success: false });
-            }
-
-            return res.status(200).json({
-                success: true,
-                data: mangaData,
-                totalPages,
-                hasPrevPage: Number(page) > 1 ? true : false,
-                hasNextPage: Number(page) < Number(totalPages) ? true : false,
-            });
+        if (!mangaData.length) {
+            return res.status(404).json({ success: false });
         }
-        console.log('cache hit');
-        const { mangaData, totalPages } = JSON.parse(String(redisData));
-
-        if (!mangaData.length) return res.status(404).json({ success: false });
 
         return res.status(200).json({
             success: true,
             data: mangaData,
-            totalPages: totalPages,
+            totalPages,
             hasPrevPage: Number(page) > 1 ? true : false,
             hasNextPage: Number(page) < Number(totalPages) ? true : false,
         });
+        // }
+        // console.log('cache hit');
+        // const { mangaData, totalPages } = JSON.parse(String(redisData));
+
+        // if (!mangaData.length) return res.status(404).json({ success: false });
+
+        // return res.status(200).json({
+        //     success: true,
+        //     data: mangaData,
+        //     totalPages: totalPages,
+        //     hasPrevPage: Number(page) > 1 ? true : false,
+        //     hasNextPage: Number(page) < Number(totalPages) ? true : false,
+        // });
     };
 
     const getNewManga = async (
@@ -249,33 +247,19 @@ function ntController() {
         const { page, genres } = req.query;
         const _genres = genres !== undefined ? `/${genres}` : '';
 
-        const key = `${KEY_CACHE_NEW_MANGA}${_genres}${-1}${15}${
-            page !== undefined ? page : 1
-        }`;
+        // const key = `${KEY_CACHE_NEW_MANGA}${_genres}${-1}${15}${
+        //     page !== undefined ? page : 1
+        // }`;
 
-        const redisData = await getCache(key);
+        // const redisData = await getCache(key);
 
-        if (!redisData) {
-            const { mangaData, totalPages } = await Nt.searchParams(
-                -1,
-                15,
-                String(genres),
-                page,
-            );
-
-            if (!mangaData.length)
-                return res.status(404).json({ success: false });
-
-            return res.status(200).json({
-                success: true,
-                data: mangaData,
-                totalPages: totalPages,
-                hasPrevPage: Number(page) > 1 ? true : false,
-                hasNextPage: Number(page) < Number(totalPages) ? true : false,
-            });
-        }
-
-        const { mangaData, totalPages } = JSON.parse(String(redisData));
+        // if (!redisData) {
+        const { mangaData, totalPages } = await Nt.searchParams(
+            -1,
+            15,
+            String(genres),
+            page,
+        );
 
         if (!mangaData.length) return res.status(404).json({ success: false });
 
@@ -286,6 +270,19 @@ function ntController() {
             hasPrevPage: Number(page) > 1 ? true : false,
             hasNextPage: Number(page) < Number(totalPages) ? true : false,
         });
+        // }
+
+        // const { mangaData, totalPages } = JSON.parse(String(redisData));
+
+        // if (!mangaData.length) return res.status(404).json({ success: false });
+
+        // return res.status(200).json({
+        //     success: true,
+        //     data: mangaData,
+        //     totalPages: totalPages,
+        //     hasPrevPage: Number(page) > 1 ? true : false,
+        //     hasNextPage: Number(page) < Number(totalPages) ? true : false,
+        // });
     };
 
     const getRanking = async (
@@ -297,33 +294,19 @@ function ntController() {
 
         //nettruyen config: https://www.nettruyenco.com/tim-truyen?status=-1&sort=10
 
-        const key = `${KEY_CACHE_RANKING_MANGA}${page ? page : ''}${
-            top ? MANGA_SORT[top] : 10
-        }${status ? MANGA_STATUS[status] : -1}${genres ? genres : ''}`;
+        // const key = `${KEY_CACHE_RANKING_MANGA}${page ? page : ''}${
+        //     top ? MANGA_SORT[top] : 10
+        // }${status ? MANGA_STATUS[status] : -1}${genres ? genres : ''}`;
 
-        const redisData = await getCache(key);
+        // const redisData = await getCache(key);
 
-        if (!redisData) {
-            const { mangaData, totalPages } = await Nt.getRanking(
-                top ? MANGA_SORT[top] : 10,
-                status ? MANGA_STATUS[status] : -1,
-                page ? page : undefined,
-                genres ? genres : '',
-            );
-
-            if (!mangaData.length) {
-                return res.status(404).json({ success: false });
-            }
-
-            return res.status(200).json({
-                success: true,
-                data: mangaData,
-                hasPrevPage: Number(page) > 1 ? true : false,
-                hasNextPage: Number(page) < Number(totalPages) ? true : false,
-            });
-        }
-
-        const { mangaData, totalPages } = JSON.parse(redisData);
+        // if (!redisData) {
+        const { mangaData, totalPages } = await Nt.getRanking(
+            top ? MANGA_SORT[top] : 10,
+            status ? MANGA_STATUS[status] : -1,
+            page ? page : undefined,
+            genres ? genres : '',
+        );
 
         if (!mangaData.length) {
             return res.status(404).json({ success: false });
@@ -335,6 +318,20 @@ function ntController() {
             hasPrevPage: Number(page) > 1 ? true : false,
             hasNextPage: Number(page) < Number(totalPages) ? true : false,
         });
+        // }
+
+        // const { mangaData, totalPages } = JSON.parse(redisData);
+
+        // if (!mangaData.length) {
+        //     return res.status(404).json({ success: false });
+        // }
+
+        // return res.status(200).json({
+        //     success: true,
+        //     data: mangaData,
+        //     hasPrevPage: Number(page) > 1 ? true : false,
+        //     hasNextPage: Number(page) < Number(totalPages) ? true : false,
+        // });
     };
 
     const search = async (
