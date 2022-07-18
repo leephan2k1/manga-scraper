@@ -3,7 +3,7 @@ import webPushController from '../controllers/webPush.controller';
 const router = Router();
 
 // /notify/info
-router.route('/info').get(webPushController().info);
+router.route('/info').post(webPushController().info);
 
 // /notify/subscribe
 router.route('/subscribe').post(webPushController().subscribe);
