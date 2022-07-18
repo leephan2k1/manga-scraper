@@ -2,6 +2,9 @@ import Router from 'express-promise-router';
 import webPushController from '../controllers/webPush.controller';
 const router = Router();
 
+// /notify/info
+router.route('/info').get(webPushController().info);
+
 // /notify/subscribe
 router.route('/subscribe').post(webPushController().subscribe);
 

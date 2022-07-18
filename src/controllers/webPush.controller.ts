@@ -11,6 +11,35 @@ const Nt = NtModel.Instance(baseUrl);
 
 export default function webPushController() {
     return {
+        info: async (req: Request, res: Response, next: NextFunction) => {
+            const { comicId, userId } = req.body;
+
+            //validate body
+            if (!comicId || !userId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'missing payload',
+                });
+            }
+
+            const existingSubscriber = await Subscriber.findOne({
+                userId,
+                subComics: { $elemMatch: { $in: comicId } },
+            });
+
+            if (!existingSubscriber) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'can not found subscriber or comicId!',
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: 'subscribed',
+            });
+        },
+
         subscribe: async (req: Request, res: Response, next: NextFunction) => {
             const { userId, comicId, endpoint, p256dh, auth } = req.body;
 
