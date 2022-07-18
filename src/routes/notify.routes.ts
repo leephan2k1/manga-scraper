@@ -5,6 +5,9 @@ const router = Router();
 // /notify/subscribe
 router.route('/subscribe').post(webPushController().subscribe);
 
+// /notify/unsubscribe
+router.route('/unsubscribe').delete(webPushController().unsubscribe);
+
 // /notify/update
 router.route('/update').get(webPushController().update);
 

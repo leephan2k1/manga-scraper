@@ -109,6 +109,44 @@ export default function webPushController() {
                 );
             }
 
+            return res.status(201).json({
+                success: true,
+            });
+        },
+
+        unsubscribe: async (
+            req: Request,
+            res: Response,
+            next: NextFunction,
+        ) => {
+            const { comicId, userId } = req.body;
+
+            //validate body
+            if (!comicId || !userId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'missing payload',
+                });
+            }
+
+            const existingSubscriber = await Subscriber.findOne({
+                userId,
+                subComics: { $elemMatch: { $in: comicId } },
+            });
+
+            if (!existingSubscriber) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'can not found subscriber or comicId!',
+                });
+            }
+
+            const { subComics } = existingSubscriber;
+            existingSubscriber.subComics = subComics.filter(
+                (comic) => comic !== comicId,
+            );
+            await existingSubscriber.save();
+
             return res.status(200).json({
                 success: true,
             });
