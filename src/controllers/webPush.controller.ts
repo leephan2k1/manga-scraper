@@ -174,7 +174,12 @@ export default function webPushController() {
             existingSubscriber.subComics = subComics.filter(
                 (comic) => comic !== comicId,
             );
-            await existingSubscriber.save();
+
+            if (existingSubscriber.subComics.length !== 0) {
+                await existingSubscriber.save();
+            } else {
+                await existingSubscriber.remove();
+            }
 
             return res.status(200).json({
                 success: true,
