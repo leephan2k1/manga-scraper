@@ -5,6 +5,7 @@ import Comic from '../models/Comic.model';
 import NtModel from '../models/Nt.model';
 import Subscriber from '../models/Subscriber.model';
 import { Subscription } from '../types/notify';
+import { isEmptyObject } from '../utils/ObjectHandler';
 
 const baseUrl = process.env.NT_SOURCE_URL as string;
 const Nt = NtModel.Instance(baseUrl);
@@ -236,8 +237,9 @@ export default function webPushController() {
                         );
 
                         if (
+                            !isEmptyObject(existingComic) &&
                             existingComic.latestChapter?.chapterTitle !==
-                            item.latestChapterTitle
+                                item.latestChapterTitle
                         ) {
                             await Comic.updateOne(
                                 {
