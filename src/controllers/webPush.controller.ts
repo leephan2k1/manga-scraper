@@ -297,6 +297,7 @@ export default function webPushController() {
                         }
                     } catch (err) {
                         console.log(':: ', err);
+                        next();
                     }
                 }),
             );
