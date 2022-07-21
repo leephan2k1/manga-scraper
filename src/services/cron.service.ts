@@ -14,8 +14,8 @@ async function notifyNewMana() {
 }
 
 tasks.push(
-    cron.schedule('*/5 * * * *', () => {
-        console.log('caching new manga every 5m');
+    cron.schedule('*/10 * * * *', () => {
+        console.log('update new chapter manga every 10m');
         notifyNewMana();
     }),
 );
