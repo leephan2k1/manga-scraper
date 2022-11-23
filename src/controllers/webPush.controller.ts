@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextFunction, Request, Response } from 'express';
 import webPush from 'web-push';
 

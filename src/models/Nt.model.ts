@@ -1,6 +1,6 @@
-import { AxiosRequestConfig } from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
 import { parse } from 'node-html-parser';
-
+import { proxyUrl } from '../config';
 // import {
 //     DEFAULT_EXPIRED_COMPLETED_MANGA_TIME,
 //     DEFAULT_EXPIRED_NEW_UPDATED_MANGA_TIME,
@@ -49,7 +49,9 @@ export default class NtModel extends Scraper {
     }
 
     private parseSource(document: HTMLElement): NtDataList {
-        const mangaList = document.querySelectorAll('.item');
+        const mangaList = document.querySelectorAll(
+            '#ctl00_divCenter .items .row .item',
+        );
 
         const mangaData = [...mangaList].map((manga) => {
             const thumbnail = this.unshiftProtocol(
@@ -231,8 +233,21 @@ export default class NtModel extends Scraper {
 
             return { mangaData, totalPages };
         } catch (err) {
-            console.log(err);
-            return { mangaData: [], totalPages: 0 };
+            try {
+                const { data } = await axios.get(
+                    `${proxyUrl}/?url=${this.baseUrl}/tim-truyen-nang-cao?genres=${genres}&gender=${gender}&minchapter=${minchapter}&sort=${top}&page=${page}&status=${status}`,
+                );
+
+                const document = parse(data);
+
+                //@ts-ignore
+                const { mangaData, totalPages } = this.parseSource(document);
+
+                return { mangaData, totalPages };
+            } catch (error) {
+                console.log(error);
+                return { mangaData: [], totalPages: 0 };
+            }
         }
     }
 
@@ -652,14 +667,8 @@ export default class NtModel extends Scraper {
         }
     }
 
-    public async getLatestChapter(mangaSlug: string) {
+    private async parseLatestChapter(document: HTMLElement) {
         try {
-            const { data } = await this.client.get(
-                `${this.baseUrl}/truyen-tranh/${mangaSlug}`,
-            );
-
-            const document = parse(data);
-
             const cover = this.unshiftProtocol(
                 String(
                     document
@@ -671,7 +680,7 @@ export default class NtModel extends Scraper {
             );
             const title = document
                 .querySelector('#item-detail > h1')
-                ?.textContent.trim();
+                ?.textContent?.trim();
 
             const lastedChapter = normalizeString(
                 String(
@@ -708,9 +717,40 @@ export default class NtModel extends Scraper {
                     chapterId,
                 },
             };
+        } catch (error) {
+            return null;
+        }
+    }
+
+    public async getLatestChapter(mangaSlug: string) {
+        try {
+            const { data } = await this.client.get(
+                `${this.baseUrl}/truyen-tranh/${mangaSlug}`,
+            );
+
+            const document = parse(data);
+
+            //@ts-ignore
+            const res = await this.parseLatestChapter(document);
+
+            if (res) return res;
+            else throw new Error();
         } catch (err) {
-            console.error(err);
-            return {};
+            try {
+                const { data } = await this.client.get(
+                    `${proxyUrl}/?url=${this.baseUrl}/truyen-tranh/${mangaSlug}`,
+                );
+
+                const document = parse(data);
+                //@ts-ignore
+                const res = await this.parseLatestChapter(document);
+
+                if (res) return res;
+                else throw new Error();
+            } catch (error) {
+                console.log('getLatestChapter error: ', error);
+                return {};
+            }
         }
     }
 
